@@ -1,4 +1,10 @@
-# redgum
+# Redgum - Bluetooth Mesh Code for Bluetooth Module
+
+## Getting Started
+
+* Install VS Code on your computer [https://code.visualstudio.com/download]
+* Install nRF Connect SDK, all the toolchain and nRF Connect for VS Code Extensions [https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_assistant.html]
+* Setup Git [https://docs.github.com/en/get-started/quickstart/set-up-git]
 
 ## Git
 
