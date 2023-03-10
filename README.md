@@ -6,6 +6,17 @@
 * Install nRF Connect SDK, all the toolchain and nRF Connect for VS Code Extensions [https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_assistant.html]
 * Setup Git [https://docs.github.com/en/get-started/quickstart/set-up-git]
 
+## Board Files
+
+Custom board files are stored under `/lib/boards/`
+
+### Setup VS Code to show custom board in nRF Connect extension
+
+* Open the command pallete by pressing `Ctrl+Shift+P` and type in `Workspace Setting`
+* Choose `Preferences: Open Workspace Settings`
+* Search for `boards`
+* Under `Nrf-connect: Boards Roots` add `../lib/` and `/lib/` to the path using add item button
+
 ## Git
 
 Please start your git branches with your first name in e.g. `brian_blah`.
