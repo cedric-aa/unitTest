@@ -16,14 +16,14 @@ target_sources(app PRIVATE
 	src/model_handler.c
 	src/model_level_cli_aa.c
 	src/model_sensor_cli_aa.c
-	${LIB_ROOT}mesh_model/src/vnd_unit_control_aa.c
-	${LIB_ROOT}mesh_model/src/storage_aa.c
-	${LIB_ROOT}mesh_model/src/vnd_activation_aa.c
-	${LIB_ROOT}common/src/uart_aa.c
-	${LIB_ROOT}common/src/check_crc_aa.c)
+	${LIB_ROOT}/mesh_model/src/vnd_unit_control_aa.c
+	${LIB_ROOT}/mesh_model/src/storage_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_activation_aa.c
+	${LIB_ROOT}/common/src/uart_aa.c
+	${LIB_ROOT}/common/src/check_crc_aa.c)
 
 
 target_include_directories(app PRIVATE include
-	${LIB_ROOT}mesh_model/include
-	${LIB_ROOT}common/include)
+	${LIB_ROOT}/mesh_model/include
+	${LIB_ROOT}/common/include)
 # NORDIC SDK APP END
