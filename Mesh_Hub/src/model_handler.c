@@ -37,102 +37,6 @@ struct SettingsControlState settingsCtlState = {
 
 struct SettingsControlState *const ctl = &settingsCtlState;
 
-static struct k_work_delayable getDataWork;
-
-// used for Testing
-struct BufferData
-{
-	uint16_t addr;
-	enum unitControlMode mode;
-	bool onOff;
-	enum unitControlFanSpeed fanSpeed;
-	uint8_t val1;
-	uint8_t val2;
-	uint8_t val3;
-	uint8_t val4;
-	uint8_t unitControlType;
-};
-
-// used Data used for testing
-static void getData(struct k_work *work)
-{
-	if (!bt_mesh_is_provisioned())
-	{
-		k_work_schedule(&getDataWork, K_MSEC(GET_DATA_INTERVAL));
-		return;
-	}
-
-	static uint32_t idx = 0;
-	int err = 0;
-
-	/* Only send Message after each timeout */
-	switch (idx++ % 7)
-	{
-	case (0):
-	{
-		LOG_INF("1");
-		err = bt_mesh_sensor_cli_get(&btMeshsensorCli, NULL, &bt_mesh_sensor_present_dev_op_temp, NULL);
-		break;
-	}
-	case (1):
-	{
-		LOG_INF("2");
-		err = sendActivationGetStatus(&activation, 0x011f);
-		break;
-	}
-	case (2):
-	{
-		LOG_INF("3");
-		err = sendActivationSetPwd(&activation, 0x011F, 123, true);
-		break;
-	}
-	case (3):
-	{
-		LOG_INF("4");
-		// define a struct to represent the buffer data
-		struct BufferData data = {
-			0x011F,					  // address
-			UNIT_CONTROL_MODE_COOL,	  // mode
-			true,					  // onOff
-			UNIT_CONTROL_FAN_SPEEP_2, // fanSpeed
-			10,
-			15,
-			20,
-			25,
-			1 // unitControlType
-		};
-
-		uint8_t buf[sizeof(struct BufferData)];
-		memcpy(buf, &data, sizeof(struct BufferData));
-		err = sendUnitControlFullCmdSet(&unitControl, buf, sizeof(buf));
-		break;
-	}
-	case (4):
-	{
-		LOG_INF("5");
-		err = sendUnitControlFullCmdGet(&unitControl, 0x011F);
-		break;
-	}
-	case (5):
-	{
-		LOG_INF("6");
-		err = sendSetLvl(btMeshlevelMotorCli);
-		break;
-	}
-	case (6):
-	{
-		LOG_INF("7");
-		err = sendGetLvl(btMeshlevelMotorCli);
-		break;
-	}
-	}
-	if (err)
-	{
-		LOG_INF("8");
-		LOG_INF("Error getting chip temperature (%d)", err);
-	}
-	k_work_schedule(&getDataWork, K_MSEC(GET_DATA_INTERVAL));
-}
 static void button_handler_cb(uint32_t pressed, uint32_t changed)
 {
 	if (!bt_mesh_is_provisioned())
@@ -234,10 +138,7 @@ static const struct bt_mesh_comp comp = {
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
-	k_work_init_delayable(&getDataWork, getData);
-
 	dk_button_handler_add(&button_handler);
-	k_work_schedule(&getDataWork, K_MSEC(GET_DATA_INTERVAL));
 
 	return &comp;
 }
