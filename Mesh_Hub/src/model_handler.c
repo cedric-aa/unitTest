@@ -20,8 +20,7 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
 static struct bt_mesh_lvl_cli btMeshlevelMotorCli = BT_MESH_LVL_CLI_INIT(&levelMotorStatusHandler);
 
-static struct bt_mesh_sensor_cli btMeshsensorCli =
-	BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
+static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
 static struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
@@ -39,25 +38,20 @@ struct SettingsControlState *const ctl = &settingsCtlState;
 
 static void button_handler_cb(uint32_t pressed, uint32_t changed)
 {
-	if (!bt_mesh_is_provisioned())
-	{
+	if (!bt_mesh_is_provisioned()) {
 		return;
 	}
 
-	if (pressed & BIT(0))
-	{
+	if (pressed & BIT(0)) {
 		LOG_INF("button1 Test");
 	}
-	if (pressed & BIT(1))
-	{
+	if (pressed & BIT(1)) {
 		LOG_INF("button2 Test ");
 	}
-	if (pressed & BIT(2))
-	{
+	if (pressed & BIT(2)) {
 		LOG_INF("button3 Test");
 	}
-	if (pressed & BIT(3))
-	{
+	if (pressed & BIT(3)) {
 		LOG_INF("button4 Test");
 	}
 }
@@ -82,13 +76,10 @@ static void attention_blink(struct k_work *work)
 		BIT(3) | BIT(0),
 	};
 
-	if (attention)
-	{
+	if (attention) {
 		dk_set_leds(pattern[idx++ % ARRAY_SIZE(pattern)]);
 		k_work_reschedule(&attention_blink_work, K_MSEC(30));
-	}
-	else
-	{
+	} else {
 		dk_set_leds(DK_NO_LEDS_MSK);
 	}
 }
@@ -118,16 +109,15 @@ BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_elem elements[] = {
 	BT_MESH_ELEM(1,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_CFG_SRV,
-					 BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
-				 BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
-									BT_MESH_MODEL_ACTIVATION(&activation))),
+		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+					BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
+		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
+					BT_MESH_MODEL_ACTIVATION(&activation))),
 	BT_MESH_ELEM(2,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_CLI(&btMeshlevelMotorCli),
-					 BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
-				 BT_MESH_MODEL_NONE)};
+		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_CLI(&btMeshlevelMotorCli),
+					BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
+		     BT_MESH_MODEL_NONE)
+};
 
 static const struct bt_mesh_comp comp = {
 	.cid = CONFIG_BT_COMPANY_ID,

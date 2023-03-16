@@ -4,7 +4,6 @@
 #include <bluetooth/mesh/sensor_cli.h>
 #include <bluetooth/mesh/sensor_types.h>
 
-
 extern const struct bt_mesh_sensor_cli_handlers sensorCliHandlers;
 
 #endif
