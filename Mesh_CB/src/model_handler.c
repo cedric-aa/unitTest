@@ -15,16 +15,16 @@
 LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
 struct btMeshlevelMotor levelMotors[] = {
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
-	{.srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers)},
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
+	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
 };
 
 static struct btMeshUnitControl unitControl = {
@@ -35,10 +35,8 @@ static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
 };
 
-
-//settings used to store value in the flash  
-struct settingsControlState settingsCtlState = {
-	.activation = &activation};
+//settings used to store value in the flash
+struct settingsControlState settingsCtlState = { .activation = &activation };
 
 struct settingsControlState *const ctl = &settingsCtlState;
 
@@ -52,13 +50,10 @@ static void attention_blink(struct k_work *work)
 {
 	static int idx;
 
-	if (attention)
-	{
+	if (attention) {
 		dk_set_leds(BIT((idx++) % 2));
 		k_work_reschedule(&attention_blink_work, K_MSEC(30));
-	}
-	else
-	{
+	} else {
 		dk_set_leds(DK_NO_LEDS_MSK);
 	}
 }
@@ -87,51 +82,30 @@ static struct bt_mesh_health_srv health_srv = {
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(
-		1,
-		BT_MESH_MODEL_LIST(
-			BT_MESH_MODEL_CFG_SRV,
-			BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
-		BT_MESH_MODEL_LIST(
-			BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
-			BT_MESH_MODEL_ACTIVATION(&activation),
-			BT_MESH_MODEL_LVL_SRV(&levelMotors[0].srvLvl))),
-	BT_MESH_ELEM(2,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[1].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(3,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[2].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(4,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[3].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(5,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[4].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(6,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[5].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(7,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[6].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(8,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[7].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(9,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[8].srvLvl)),
-				 BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(10,
-				 BT_MESH_MODEL_LIST(
-					 BT_MESH_MODEL_LVL_SRV(&levelMotors[9].srvLvl)),
-				 BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(1,
+		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
+					BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
+		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
+					BT_MESH_MODEL_ACTIVATION(&activation),
+					BT_MESH_MODEL_LVL_SRV(&levelMotors[0].srvLvl))),
+	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[1].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(3, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[2].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(4, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[3].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(5, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[4].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(6, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[5].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(7, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[6].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(8, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[7].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(9, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[8].srvLvl)),
+		     BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(10, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[9].srvLvl)),
+		     BT_MESH_MODEL_NONE),
 };
 
 static const struct bt_mesh_comp comp = {
@@ -144,8 +118,7 @@ const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
 
-	for (int i = 0; i < ARRAY_SIZE(levelMotors); ++i)
-	{
+	for (int i = 0; i < ARRAY_SIZE(levelMotors); ++i) {
 		k_work_init_delayable(&levelMotors[i].levelMotorDelayWork, levelMotorWork);
 	}
 

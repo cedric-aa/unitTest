@@ -44,8 +44,7 @@ static bool ble_button_state;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	if (err)
-	{
+	if (err) {
 		printk("Connection failed (err %u)\n", err);
 		return;
 	}
@@ -80,8 +79,7 @@ static struct bt_lbs_cb lbs_callbacs = {
 
 static void button_changed(uint32_t button_state, uint32_t has_changed)
 {
-	if (has_changed & LBS_BUTTON)
-	{
+	if (has_changed & LBS_BUTTON) {
 		uint32_t user_button_state = button_state & LBS_BUTTON;
 
 		bt_lbs_send_button_state(user_button_state);
@@ -93,8 +91,7 @@ static void lbs_adv_start(void)
 {
 	int err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 
-	if (err)
-	{
+	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
 	}
@@ -112,8 +109,7 @@ static void lbs_init(void)
 
 	int err = bt_lbs_init(&lbs_callbacs);
 
-	if (err)
-	{
+	if (err) {
 		printk("Failed to init LBS (err:%d)\n", err);
 		return;
 	}
