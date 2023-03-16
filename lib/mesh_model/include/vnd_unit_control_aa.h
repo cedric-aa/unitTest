@@ -16,10 +16,14 @@
 #define BT_MESH_CB_MODEL_UNIT_CONTROL_ID 0x000A
 
 /** full Cmd to Unit Control message opcode.  */
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE BT_MESH_MODEL_OP_3(0x0F, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_GET BT_MESH_MODEL_OP_3(0x10, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET BT_MESH_MODEL_OP_3(0x0E, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET_ACK BT_MESH_MODEL_OP_3(0x0D, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE                                             \
+	BT_MESH_MODEL_OP_3(0x0F, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_GET                                         \
+	BT_MESH_MODEL_OP_3(0x10, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET                                         \
+	BT_MESH_MODEL_OP_3(0x0E, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET_ACK                                     \
+	BT_MESH_MODEL_OP_3(0x0D, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
 
 /**length message**/
 #define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE 8
@@ -28,8 +32,7 @@
 #define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_GET 0
 
 /** Bluetooth Mesh unitControl mode values. */
-enum unitControlMode
-{
+enum unitControlMode {
 	UNIT_CONTROL_MODE_COOL = 1,
 	UNIT_CONTROL_MODE_HEAT = 2,
 	UNIT_CONTROL_MODE_FAN = 3,
@@ -37,8 +40,7 @@ enum unitControlMode
 	UNIT_CONTROL_MODE_AUTO = 5
 };
 
-enum unitControlCodeStatus
-{
+enum unitControlCodeStatus {
 	UNIT_CONTROL_CODE_STATUS_SUCCESS,
 	UNIT_CONTROL_CODE_STATUS_FAIL,
 	UNIT_CONTROL_CODE_STATUS_LOCK,
@@ -46,8 +48,7 @@ enum unitControlCodeStatus
 };
 
 /** Bluetooth Mesh unitControl OnOff values. */
-enum unitControlFanSpeed
-{
+enum unitControlFanSpeed {
 	UNIT_CONTROL_FAN_SPEEP_1 = 1,
 	UNIT_CONTROL_FAN_SPEEP_2 = 2,
 	UNIT_CONTROL_FAN_SPEEP_3 = 3,
@@ -56,16 +57,14 @@ enum unitControlFanSpeed
 };
 
 /** Bluetooth Mesh unitControl temperature */
-struct temperatureValue
-{
+struct temperatureValue {
 	/** Integer part of the value. */
 	int8_t val1;
 	/** Fractional part of the value (in one-millionth parts). */
 	int8_t val2;
 };
 
-struct temperatureValues
-{
+struct temperatureValues {
 	struct temperatureValue targetTemp;
 	struct temperatureValue currentTemp;
 };
@@ -79,17 +78,15 @@ struct btMeshUnitControl;
  *
  * @param[in] _unitControl Pointer to a @ref btMeshUnitControl instance.
  */
-#define BT_MESH_MODEL_UNIT_CONTROL(_unitControl)                           \
-	BT_MESH_MODEL_VND_CB(BT_MESH_MODEL_UNIT_CONTROL_COMPANY_ID,            \
-						 BT_MESH_CB_MODEL_UNIT_CONTROL_ID,                 \
-						 btMeshUnitControlOp, &(_unitControl)->pub,        \
-						 BT_MESH_MODEL_USER_DATA(struct btMeshUnitControl, \
-												 _unitControl),            \
-						 &btMeshUnitControlCb)
+#define BT_MESH_MODEL_UNIT_CONTROL(_unitControl)                                                   \
+	BT_MESH_MODEL_VND_CB(BT_MESH_MODEL_UNIT_CONTROL_COMPANY_ID,                                \
+			     BT_MESH_CB_MODEL_UNIT_CONTROL_ID, btMeshUnitControlOp,                \
+			     &(_unitControl)->pub,                                                 \
+			     BT_MESH_MODEL_USER_DATA(struct btMeshUnitControl, _unitControl),      \
+			     &btMeshUnitControlCb)
 
 /** Bluetooth Mesh unitControl model handlers. */
-struct btMeshUnitControlHandlers
-{
+struct btMeshUnitControlHandlers {
 	/** @brief Called after the node has been provisioned, or after all
 	 * mesh data has been loaded from persistent storage.
 	 *
@@ -110,7 +107,7 @@ struct btMeshUnitControlHandlers
 	 * the message.
 	 */
 	int8_t (*const fullCmdSet)(struct btMeshUnitControl *unitControl,
-							   struct bt_mesh_msg_ctx *ctx);
+				   struct bt_mesh_msg_ctx *ctx);
 
 	/** @brief Handler for a fullCmdSetAck message.
  *
@@ -121,14 +118,13 @@ struct btMeshUnitControlHandlers
  * the message.
  */
 	void (*const fullCmdSetAck)(struct btMeshUnitControl *unitControl,
-								struct bt_mesh_msg_ctx *ctx, uint8_t status);
+				    struct bt_mesh_msg_ctx *ctx, uint8_t status);
 };
 
 /**
  * Bluetooth Mesh unitControl model context.
  */
-struct btMeshUnitControl
-{
+struct btMeshUnitControl {
 	/** Access model pointer. */
 	struct bt_mesh_model *model;
 	/** Publish parameters. */
@@ -136,7 +132,8 @@ struct btMeshUnitControl
 	/** Publication message. */
 	struct net_buf_simple pubMsg;
 	/** Publication message buffer. */
-	uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE)];
+	uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE,
+					  BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE)];
 	/** Handler function structure. */
 	const struct btMeshUnitControlHandlers *handlers;
 	/** Current Mode value. */
@@ -160,8 +157,7 @@ struct btMeshUnitControl
  * @retval -EINVAL The model is not bound to an application key.
  * @retval -EAGAIN The device has not been provisioned.
  */
-int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl,
-							  uint16_t addr);
+int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t addr);
 
 /** @param[in] unitControl  model instance to set the fullCmd.
  * @param unitControl

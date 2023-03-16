@@ -16,7 +16,8 @@
 #define BT_MESH_CB_MODEL_ACTIVATION_ID 0x000B
 
 /*Opcode*/
-#define BT_MESH_MODEL_ACTIVATION_OP_STATUS_GET BT_MESH_MODEL_OP_3(0x0A, BT_MESH_CB_MODEL_ACTIVATION_ID)
+#define BT_MESH_MODEL_ACTIVATION_OP_STATUS_GET                                                     \
+	BT_MESH_MODEL_OP_3(0x0A, BT_MESH_CB_MODEL_ACTIVATION_ID)
 #define BT_MESH_MODEL_ACTIVATION_OP_PWD_SET BT_MESH_MODEL_OP_3(0x0B, BT_MESH_CB_MODEL_ACTIVATION_ID)
 #define BT_MESH_MODEL_ACTIVATION_OP_STATUS BT_MESH_MODEL_OP_3(0x0C, BT_MESH_CB_MODEL_ACTIVATION_ID)
 
@@ -34,57 +35,54 @@ struct btMeshActivation;
  *
  * @param[in] _activation Pointer to a @ref btMeshActivation instance.
  */
-#define BT_MESH_MODEL_ACTIVATION(_activation)                             \
-    BT_MESH_MODEL_VND_CB(BT_MESH_MODEL_ACTIVATION_COMPANY_ID,             \
-                         BT_MESH_CB_MODEL_ACTIVATION_ID,                  \
-                         btMeshActivationOp, &(_activation)->pub,         \
-                         BT_MESH_MODEL_USER_DATA(struct btMeshActivation, \
-                                                 _activation),            \
-                         &btMeshActivationCb)
+#define BT_MESH_MODEL_ACTIVATION(_activation)                                                      \
+	BT_MESH_MODEL_VND_CB(BT_MESH_MODEL_ACTIVATION_COMPANY_ID, BT_MESH_CB_MODEL_ACTIVATION_ID,  \
+			     btMeshActivationOp, &(_activation)->pub,                              \
+			     BT_MESH_MODEL_USER_DATA(struct btMeshActivation, _activation),        \
+			     &btMeshActivationCb)
 
 /** Bluetooth Mesh Activation model handlers. */
-struct btMeshActivationHandlers
-{
-    /** @brief Handler for a mode message.
+struct btMeshActivationHandlers {
+	/** @brief Handler for a mode message.
      *
      * @param[in] activation instance that received the text message.
      * @param[in] ctx Context of the incoming message.
      * @param[in] pwd of a Activation client published
      */
-    int (*const setPwd)(struct btMeshActivation *activation, bool activate,
-                        uint8_t pwd);
+	int (*const setPwd)(struct btMeshActivation *activation, bool activate, uint8_t pwd);
 
-    /** @brief Handler for a Get Status message.
+	/** @brief Handler for a Get Status message.
      *
      * @param[in]  Activation instance that received the text message.
      * @param[in] ctx Context of the incoming message.
      * @param[in] buf net_buf_simple buffer including the status info
      */
-    int (*const status)(struct bt_mesh_model *model,
-                        struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
+	int (*const status)(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf);
 };
 
 /**
  * Bluetooth Mesh Activation model context.
  */
-struct btMeshActivation
-{
-    /** Access model pointer. */
-    struct bt_mesh_model *model;
-    struct bt_mesh_model_pub pub;
-    struct net_buf_simple pubMsg;
-    uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_ACTIVATION_OP_STATUS, BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS)];
-    const struct btMeshActivationHandlers *handlers;
+struct btMeshActivation {
+	/** Access model pointer. */
+	struct bt_mesh_model *model;
+	struct bt_mesh_model_pub pub;
+	struct net_buf_simple pubMsg;
+	uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_ACTIVATION_OP_STATUS,
+					  BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS)];
+	const struct btMeshActivationHandlers *handlers;
 
-    // Added fields
-    bool timerIsActive;
-    uint16_t pwd;
-    uint32_t timeRemaining;
-    bool lock;
+	// Added fields
+	bool timerIsActive;
+	uint16_t pwd;
+	uint32_t timeRemaining;
+	bool lock;
 };
 
 int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr);
-int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint16_t pwd, bool timerIsActive);
+int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint16_t pwd,
+			 bool timerIsActive);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshActivationOp[];

@@ -10,10 +10,9 @@
 #ifndef _STORAGE_AA_H
 #define _STORAGE__AA_H
 
-enum ps_variables_id
-{
-    RESET_COUNTER = 0x01,
-    ACTIVATION_PWD,
+enum ps_variables_id {
+	RESET_COUNTER = 0x01,
+	ACTIVATION_PWD,
 };
 
 extern uint8_t resetCounter;
