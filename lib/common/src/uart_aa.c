@@ -35,87 +35,105 @@ enum uart_state_t
     UART_STATE_RECEIVING_LEN
 };
 
-void uartReceivethread(void)
+static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 {
-    dataQueueItemType uartReceiveQueueItem;
     static uint8_t message[BUF_SIZE];
     static size_t messageLength = 0;
     static enum uart_state_t state = UART_STATE_IDLE;
     static uint8_t payloadSize = 0;
-    // static uint8_t count = 0; // debug counter
+
+    // LOG_HEXDUMP_INF(buff, buffLength, "start in buffer");
+    //  LOG_HEXDUMP_INF(&message, messageLength, " start in message");
+
+    for (int i = 0; i < buffLength; i++)
+    {
+        switch (state)
+        {
+
+        case UART_STATE_IDLE:
+            if (buff[i] == START_BYTE)
+            {
+                state = UART_STATE_RECEIVING_LEN;
+                message[messageLength++] = buff[i];
+            }
+            break;
+
+        case UART_STATE_RECEIVING_LEN:
+            payloadSize = buff[i];
+
+            if (payloadSize + END_OF_FRAME_SIZE + 2 > BUF_SIZE)
+            {
+                LOG_ERR("payload size wrong can't be more than the BUF_SIZE %02x", payloadSize);
+                state = UART_STATE_IDLE;
+                messageLength = 0;
+            }
+            else
+            {
+                state = UART_STATE_RECEIVING;
+                message[messageLength++] = buff[i];
+            }
+            break;
+
+        case UART_STATE_RECEIVING:
+            message[messageLength++] = buff[i];
+
+            if (buff[i] == END_BYTE &&
+                messageLength == payloadSize + END_OF_FRAME_SIZE + 2)
+            {
+
+                state = UART_STATE_IDLE;
+                messageLength = 0;
+                uint16_t *receivedCrc = (uint16_t *)&message[payloadSize + 2];
+                unsigned short crc = crc16Ccitt(&message[2], payloadSize);
+                if (crc == *receivedCrc)
+                {
+                    LOG_INF("Received message");
+                }
+                else
+                {
+                    LOG_ERR("Received message has invalid CRC16 [%04x] [%04x] ", crc, *receivedCrc);
+                   }
+            }
+            else if (buff[i] != END_BYTE &&
+                     messageLength >= payloadSize + END_OF_FRAME_SIZE + 2)
+            {
+                LOG_ERR("Error Framing ");
+                state = UART_STATE_IDLE;
+                int temp = messageLength;
+                messageLength = 0;
+
+                // look for another START_BYTE in the message buffer
+                for (int j = 1; j < temp - 1; j++)
+                {
+                    if (message[j] == START_BYTE)
+                    {
+                        uartStateMachine(&message[j], temp - j);
+                        break;
+                    }
+                }
+            }
+
+            break;
+
+        default:
+
+            break;
+        }
+    }
+}
+
+void uartReceiveThread(void)
+{
+    dataQueueItemType uartReceiveQueueItem;
 
     while (1)
     {
 
         k_msgq_get(&uartMsgq, &uartReceiveQueueItem, K_FOREVER);
-
-        for (int i = 0; i < uartReceiveQueueItem.length; i++)
-        {
-            switch (state)
-            {
-
-            case UART_STATE_IDLE:
-                if (uartReceiveQueueItem.bufferItem[i] == START_BYTE)
-                {
-                    state = UART_STATE_RECEIVING_LEN;
-                }
-                break;
-
-            case UART_STATE_RECEIVING_LEN:
-                payloadSize = uartReceiveQueueItem.bufferItem[i];
-                if (payloadSize + END_OF_FRAME_SIZE > BUF_SIZE)
-                {
-                    LOG_ERR("Message too long");
-                    state = UART_STATE_IDLE;
-                    messageLength = 0;
-                }
-                else
-                {
-                    state = UART_STATE_RECEIVING;
-                    message[messageLength++] = uartReceiveQueueItem.bufferItem[i];
-                }
-                break;
-
-            case UART_STATE_RECEIVING:
-                if (uartReceiveQueueItem.bufferItem[i] == END_BYTE &&
-                    messageLength == payloadSize + END_OF_FRAME_SIZE)
-                {
-                    uint16_t *receivedCrc = (uint16_t *)&message[payloadSize + 1];
-                    unsigned short crc = crc16Ccitt(&message[1], payloadSize);
-                    if (crc == *receivedCrc)
-                    {
-                        // Process the message data here
-                        LOG_INF("Received message");
-                        //  LOG_HEXDUMP_INF(&message, messageLength, "success received");
-                    }
-                    else
-                    {
-                        LOG_ERR("Received message has invalid CRC16");
-                    }
-
-                    state = UART_STATE_IDLE;
-                    messageLength = 0;
-                }
-                else if (uartReceiveQueueItem.bufferItem[i] != END_BYTE &&
-                         messageLength >= payloadSize + END_OF_FRAME_SIZE)
-                {
-                    LOG_ERR("Error Framing ");
-                    state = UART_STATE_IDLE;
-                    messageLength = 0;
-                }
-                else if (messageLength < payloadSize + END_OF_FRAME_SIZE)
-                {
-                    message[messageLength++] = uartReceiveQueueItem.bufferItem[i];
-                }
-                break;
-
-            default:
-
-                break;
-            }
-        }
+        uartStateMachine(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length);
     }
 }
+
 int uartInit(void)
 {
     int ret;
@@ -172,4 +190,4 @@ void uartHandler(const struct device *dev, struct uart_event *evt, void *user_da
     }
 }
 
-K_THREAD_DEFINE(uartReceivethread_id, THREAD_UART_STACKSIZE, uartReceivethread, NULL, NULL, NULL, THREAD_UART_PRIORITY, 0, 0);
+K_THREAD_DEFINE(uartReceiveThread_id, THREAD_UART_STACKSIZE, uartReceiveThread, NULL, NULL, NULL, THREAD_UART_PRIORITY, 0, 0);
