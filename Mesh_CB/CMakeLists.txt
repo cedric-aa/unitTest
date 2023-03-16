@@ -17,12 +17,12 @@ target_sources(app PRIVATE
 	src/lb_service_handler.c
 	src/model_handler.c
 	src/model_level_aa.c
-	${LIB_ROOT}/src/storage_aa.c
-	${LIB_ROOT}/src/vnd_unit_control_aa.c
-	${LIB_ROOT}/src/vnd_activation_aa.c)
+	${LIB_ROOT}/mesh_model/src/storage_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_unit_control_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_activation_aa.c)
 
 
 target_include_directories(app PRIVATE include
-	${LIB_ROOT}/include)
+	${LIB_ROOT}/mesh_model/include)
 
 # NORDIC SDK APP END
