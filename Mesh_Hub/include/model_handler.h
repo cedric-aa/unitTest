@@ -16,18 +16,16 @@
 #include "vnd_activation_aa.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-    const struct bt_mesh_comp *model_handler_init(void);
+const struct bt_mesh_comp *model_handler_init(void);
 
-    struct SettingsControlState
-    {
-        struct btMeshActivation *activation;
-    };
+struct SettingsControlState {
+	struct btMeshActivation *activation;
+};
 
-    extern struct SettingsControlState *const ctl;
+extern struct SettingsControlState *const ctl;
 
 #ifdef __cplusplus
 }

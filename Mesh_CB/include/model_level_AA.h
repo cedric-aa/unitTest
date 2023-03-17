@@ -14,8 +14,7 @@
 
 #include <bluetooth/mesh/gen_lvl_srv.h>
 
-struct btMeshlevelMotor
-{
+struct btMeshlevelMotor {
 	struct bt_mesh_lvl_srv srvLvl;
 	struct k_work_delayable levelMotorDelayWork;
 	uint32_t timePeriod;

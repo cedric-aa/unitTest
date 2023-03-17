@@ -13,11 +13,10 @@
 #define LB_SERVICE_HANDLER_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-    void lbs_handler_init(void);
+void lbs_handler_init(void);
 
 #ifdef __cplusplus
 }

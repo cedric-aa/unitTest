@@ -17,6 +17,19 @@ Custom board files are stored under `/lib/boards/`
 * Search for `boards`
 * Under `Nrf-connect: Boards Roots` add `../lib/` and `/lib/` to the path using add item button
 
+## Code formatting
+
+We standarize code formatting by using `.clang-format` file.
+
+Make a copy of this file and place it in the root directory of the project folder.
+
+### Setup VS Code to automatically format on save
+
+* Open the command pallete by pressing `Ctrl+Shift+P` and type in `Workspace Setting`
+* Choose `Preferences: Open Workspace Settings`
+* Search for `format`
+* Tick `Editor: Format On Save`
+
 ## Git
 
 Please start your git branches with your first name in e.g. `brian_blah`.
