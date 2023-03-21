@@ -94,7 +94,7 @@ struct btMeshUnitControlHandlers {
 	 */
 	void (*const start)(struct btMeshUnitControl *unitControl);
 
-	void (*const fullCmd)(struct btMeshUnitControl *unitControl, struct bt_mesh_msg_ctx *ctx);
+	void (*const fullCmd)(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
 
 	/** @brief Handler for a fullCmdSet message.
 	 *
@@ -106,8 +106,7 @@ struct btMeshUnitControlHandlers {
 	 * @param[in] unitControl of a unitControl client published
 	 * the message.
 	 */
-	int8_t (*const fullCmdSet)(struct btMeshUnitControl *unitControl,
-				   struct bt_mesh_msg_ctx *ctx);
+	int8_t (*const fullCmdSet)(struct net_buf_simple *buf);
 
 	/** @brief Handler for a fullCmdSetAck message.
  *
@@ -147,26 +146,9 @@ struct btMeshUnitControl {
 	/**Unit control Type*/
 	uint8_t unitControlType;
 };
-
-/** @brief Get current fullcmd value of a unitControl.
- *
- * @param[in] unitControl unitControl model instance to send the message.
- * @param[in] addr Address of the unitControl to get mode value of.
- *
- * @retval 0 Successfully sent the message.
- * @retval -EINVAL The model is not bound to an application key.
- * @retval -EAGAIN The device has not been provisioned.
- */
+void sendUnitControlFullCmdSetAck(struct btMeshUnitControl *unitControl,
+				  struct bt_mesh_msg_ctx *ctx, uint8_t result);
 int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t addr);
-
-/** @param[in] unitControl  model instance to set the fullCmd.
- * @param unitControl
- * @param buf
- * @param bufSize
- * @retval 0 Successfully set the preceive and sent the message.
- * @retval -EADDRNOTAVAIL Publishing is not configured.
- * @retval -EAGAIN The device has not been provisioned.
- */
 int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
 			      uint16_t address);
 

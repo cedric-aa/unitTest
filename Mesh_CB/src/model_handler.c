@@ -11,8 +11,13 @@
 #include "model_level_aa.h"
 #include "vnd_unit_control_aa.h"
 #include <zephyr/logging/log.h>
+#include "uart_aa.h"
+#include "message_format_aa.h"
 
 LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
+
+#define THREAD_PUBLISHER_STACKSIZE 2048
+#define THREAD_PUBLISHER_PRIORITY 14
 
 struct btMeshlevelMotor levelMotors[] = {
 	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
@@ -39,6 +44,36 @@ static struct btMeshActivation activation = {
 struct settingsControlState settingsCtlState = { .activation = &activation };
 
 struct settingsControlState *const ctl = &settingsCtlState;
+
+void publisherThread(void)
+{
+	dataQueueItemType publisherQueueItem;
+	int err;
+
+	while (1) {
+		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
+
+		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
+				"Cb Publisher CB");
+
+		switch (publisherQueueItem.bufferItem[0]) {
+		case STATUS:
+
+			//update the data model
+
+			break;
+
+		case SETACK:
+			//send trough mesh
+			//sendUnitControlFullCmdSetAck(unitControl, ctx, 1);
+
+			break;
+
+		default:
+			break;
+		}
+	}
+}
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
  * requested.

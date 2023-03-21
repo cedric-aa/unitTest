@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <zephyr/bluetooth/mesh.h>
 #include "vnd_unit_control_aa.h"
 #include "mesh/net.h"
@@ -139,7 +133,7 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	printClientStatus(unitControl);
 
 	if (unitControl->handlers->fullCmd) {
-		unitControl->handlers->fullCmd(unitControl, ctx);
+		unitControl->handlers->fullCmd(ctx, buf);
 	}
 
 	return 0;
@@ -148,11 +142,11 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
+	//CB side
 	LOG_INF("Received [unitControl][GET] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
 		ctx->addr, ctx->recv_dst, ctx->recv_rssi);
 
 	struct btMeshUnitControl *unitControl = model->user_data;
-
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE,
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE);
 
@@ -183,31 +177,18 @@ static int handleFullCmdSetAck(struct bt_mesh_model *model, struct bt_mesh_msg_c
 	return 0;
 }
 
-static int handleFullCmdSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static void handleFullCmdSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
 	LOG_INF("Received [unitControl][SET] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
 		ctx->addr, ctx->recv_dst, ctx->recv_rssi);
 
-	uint8_t result = 1;
 	struct btMeshUnitControl *unitControl = model->user_data;
 
-	unitControl->mode = net_buf_simple_pull_u8(buf);
-	unitControl->onOff = net_buf_simple_pull_u8(buf);
-	unitControl->fanSpeed = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.currentTemp.val1 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.currentTemp.val2 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.targetTemp.val1 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.targetTemp.val2 = net_buf_simple_pull_u8(buf);
-	unitControl->unitControlType = net_buf_simple_pull_u8(buf);
-
 	if (unitControl->handlers->fullCmdSet) {
-		result = unitControl->handlers->fullCmdSet(unitControl, ctx);
+		int result = unitControl->handlers->fullCmdSet(buf);
 	}
-
-	sendUnitControlFullCmdSetAck(unitControl, ctx, result);
-
-	return 0;
+	//sendUnitControlFullCmdSetAck(unitControl, ctx, 1);
 }
 
 const struct bt_mesh_model_op btMeshUnitControlOp[] = {
@@ -240,9 +221,7 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 {
 	LOG_DBG("btMeshUnitControlInit");
 	struct btMeshUnitControl *unitControl = model->user_data;
-
 	unitControl->model = model;
-
 	net_buf_simple_init_with_data(&unitControl->pubMsg, unitControl->buf,
 				      sizeof(unitControl->buf));
 	unitControl->pub.msg = &unitControl->pubMsg;
@@ -255,9 +234,9 @@ static int btMeshUnitControlStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("btMeshUnitControlStart");
 	struct btMeshUnitControl *unitControl = model->user_data;
-
 	if (unitControl->handlers->start) {
 		//	unitControl->handlers->start(unitControl);
+		//send uart status update message to
 	}
 
 	return 0;
@@ -273,47 +252,28 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.start = btMeshUnitControlStart,
 	.reset = btMeshUnitControlReset,
 };
-static dataQueueItemType FormatUartEncodeFullCmd(dataQueueItemType uartTxQueueItem,
-						 const struct btMeshUnitControl *unitControl)
+
+static void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, struct net_buf_simple *buf)
 
 {
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->mode;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->onOff;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->fanSpeed;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
-		unitControl->tempValues.currentTemp.val1;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
-		unitControl->tempValues.currentTemp.val2;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
-		unitControl->tempValues.targetTemp.val1;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
-		unitControl->tempValues.targetTemp.val2;
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->unitControlType;
-	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
-
-	return uartTxQueueItem;
+	memcpy(uartTxQueueItem->bufferItem[uartTxQueueItem->length + 1], buf->data, buf->len);
+	uartTxQueueItem->bufferItem[0] = uartTxQueueItem->length + buf->len;
 }
 
-static void unitControlFullCmd(struct btMeshUnitControl *unitControl, struct bt_mesh_msg_ctx *ctx)
+static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
 {
 	// Send to the HUB
-	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
-	uartTxQueueItem = FormatUartEncodeFullCmd(uartTxQueueItem, unitControl);
-
+	dataQueueItemType uartTxQueueItem =	headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
+	formatUartEncodeFullCmd(&uartTxQueueItem, buf);
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
 
-static int8_t unitControlFullCmdSet(struct btMeshUnitControl *unitControl,
-				    struct bt_mesh_msg_ctx *ctx)
-
+static void unitControlFullCmdSet(struct net_buf_simple *buf)
 {
 	// send to the CB
-	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SET, false);
-	uartTxQueueItem = FormatUartEncodeFullCmd(uartTxQueueItem, unitControl);
+	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(SET);
+	formatUartEncodeFullCmd(&uartTxQueueItem, buf);
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
-	return 0;
 }
 
 static void unitControlHandleFullCmdSetAck(struct btMeshUnitControl *unitControl,
@@ -321,7 +281,7 @@ static void unitControlHandleFullCmdSetAck(struct btMeshUnitControl *unitControl
 {
 	// send to the hub
 	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SETACK, false);
+		headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SETACK, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = ack; // status
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);

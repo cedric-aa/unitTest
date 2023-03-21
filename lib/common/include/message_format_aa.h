@@ -29,7 +29,7 @@ typedef struct {
 } dataQueueItemType;
 
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem);
-dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
-				     uint8_t uartAck);
-
+dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
+					uint8_t uartAck);
+dataQueueItemType headerCbFormatUartTx(uint8_t messageID);
 #endif
