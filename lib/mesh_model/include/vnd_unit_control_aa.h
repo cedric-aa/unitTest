@@ -87,35 +87,9 @@ struct btMeshUnitControl;
 
 /** Bluetooth Mesh unitControl model handlers. */
 struct btMeshUnitControlHandlers {
-	/** @brief Called after the node has been provisioned, or after all
-	 * mesh data has been loaded from persistent storage.
-	 *
-	 * @param[in] cli unitControl instance that has been started.
-	 */
 	void (*const start)(struct btMeshUnitControl *unitControl);
-
 	void (*const fullCmd)(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
-
-	/** @brief Handler for a fullCmdSet message.
-	 *
-	 * @param[in] cli unitControl instance that received the text message.
-	 * @param[in] ctx Context of the incoming message.
-	 * @param[in] onOff of a unitControl client published
-	 * @param[in] fanSpeed of a unitControl client published
-	 * @param[in] tempValues of a unitControl client published
-	 * @param[in] unitControl of a unitControl client published
-	 * the message.
-	 */
-	int8_t (*const fullCmdSet)(struct net_buf_simple *buf);
-
-	/** @brief Handler for a fullCmdSetAck message.
- *
- * @param[in] cli unitControl instance that received the text message.
- * @param[in] ctx Context of the incoming message.
- * @param[in] statusCode of a unitControl client published
-
- * the message.
- */
+	void (*const fullCmdSet)(struct net_buf_simple *buf);
 	void (*const fullCmdSetAck)(struct btMeshUnitControl *unitControl,
 				    struct bt_mesh_msg_ctx *ctx, uint8_t status);
 };
@@ -146,11 +120,27 @@ struct btMeshUnitControl {
 	/**Unit control Type*/
 	uint8_t unitControlType;
 };
-void sendUnitControlFullCmdSetAck(struct btMeshUnitControl *unitControl,
-				  struct bt_mesh_msg_ctx *ctx, uint8_t result);
+
+void sendUnitControlFullCmdSetAck(struct btMeshUnitControl *unitControl, uint8_t result);
 int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t addr);
 int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
 			      uint16_t address);
+
+void unitControlUpdateStatus(struct btMeshUnitControl *unitControl ,uint8_t *buf, size_t bufSize);
+void sendToCbUartStatus();
+
+//extern struct k_timer setAckTimer;
+//extern struct k_timer updateTimer;
+
+
+
+//extern void expirysetAckTimer(struct k_timer *timer_id);
+//extern void expiryupdateTimer(struct k_timer *timer_id);
+
+
+
+
+
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshUnitControlOp[];

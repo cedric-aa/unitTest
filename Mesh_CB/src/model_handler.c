@@ -48,7 +48,6 @@ struct settingsControlState *const ctl = &settingsCtlState;
 void publisherThread(void)
 {
 	dataQueueItemType publisherQueueItem;
-	int err;
 
 	while (1) {
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
@@ -58,15 +57,16 @@ void publisherThread(void)
 
 		switch (publisherQueueItem.bufferItem[0]) {
 		case STATUS:
-
-			//update the data model
-
+			//update the unit control data model
+			unitControlUpdateStatus(&unitControl ,publisherQueueItem.bufferItem, publisherQueueItem.length);
 			break;
 
 		case SETACK:
-			//send trough mesh
-			//sendUnitControlFullCmdSetAck(unitControl, ctx, 1);
-
+			//receive ack 
+			//k_timer_stop(&setAckTimer);
+			sendUnitControlFullCmdSetAck(&unitControl,1);
+			//send uart status to the cb the update the the data model 
+			sendToCbUartStatus();
 			break;
 
 		default:

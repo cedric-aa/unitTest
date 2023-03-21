@@ -40,11 +40,12 @@ dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint
 	return uartTxQueueItem;
 }
 
-dataQueueItemType headerCbFormatUartTx(uint8_t messageID)
+dataQueueItemType headerCbFormatUartTx(uint8_t messageType,uint8_t messageID)
 {
 	dataQueueItemType uartTxQueueItem;
-	uartTxQueueItem.length = 2;
-	uartTxQueueItem.bufferItem[0] = 2; // payload length
-	uartTxQueueItem.bufferItem[1] = messageID; // uartAck
+	uartTxQueueItem.length = 3;
+	uartTxQueueItem.bufferItem[0] = 3; // payload length
+	uartTxQueueItem.bufferItem[1] = messageType; 
+	uartTxQueueItem.bufferItem[2] = messageID; 
 	return uartTxQueueItem;
 }

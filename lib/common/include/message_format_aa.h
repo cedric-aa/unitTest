@@ -31,5 +31,5 @@ typedef struct {
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem);
 dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
 					uint8_t uartAck);
-dataQueueItemType headerCbFormatUartTx(uint8_t messageID);
+dataQueueItemType headerCbFormatUartTx(uint8_t messageType,uint8_t messageID);
 #endif
