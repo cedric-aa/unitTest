@@ -167,7 +167,8 @@ int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t ad
  * @retval -EADDRNOTAVAIL Publishing is not configured.
  * @retval -EAGAIN The device has not been provisioned.
  */
-int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize);
+int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
+			      uint16_t address);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshUnitControlOp[];

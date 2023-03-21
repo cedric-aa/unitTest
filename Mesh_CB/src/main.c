@@ -15,11 +15,11 @@
 #include "model_handler.h"
 #include "lb_service_handler.h"
 #include "storage_aa.h"
+#include "uart_aa.h"
 
 static void bt_ready(int err)
 {
-	if (err)
-	{
+	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
@@ -28,19 +28,22 @@ static void bt_ready(int err)
 
 	dk_leds_init();
 	dk_buttons_init(NULL);
+	err = uartInit();
+	if (err) {
+		printk("Initializing uart failed (err %d)\n", err);
+		return;
+	}
 
 	/*persistant strorage init*/
 	permanentStorageSettingsInit();
 
 	err = bt_mesh_init(bt_mesh_dk_prov_init(), model_handler_init());
-	if (err)
-	{
+	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SETTINGS))
-	{
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
 
@@ -59,8 +62,7 @@ void main(void)
 	printk("Initializing...\n");
 
 	err = bt_enable(bt_ready);
-	if (err)
-	{
+	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
 	}
 }

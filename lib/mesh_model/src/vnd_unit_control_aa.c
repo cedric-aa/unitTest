@@ -9,8 +9,10 @@
 #include "mesh/net.h"
 #include <string.h>
 #include <zephyr/logging/log.h>
+#include "uart_aa.h"
+#include "message_format_aa.h"
 
-LOG_MODULE_REGISTER(vnd_unit_control_aa, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(vnd_unit_control_aa, LOG_LEVEL_DBG);
 
 static const uint8_t *modeToString[] = {
 	[UNIT_CONTROL_MODE_COOL] = "cool mode", [UNIT_CONTROL_MODE_HEAT] = "heat mode",
@@ -77,10 +79,11 @@ int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t ad
 	return bt_mesh_model_send(unitControl->model, &ctx, &buf, NULL, NULL);
 }
 
-int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize)
+int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
+			      uint16_t address)
 {
 	struct bt_mesh_msg_ctx ctx = {
-		.addr = (uint16_t)((buf[1] << 8) | buf[0]),
+		.addr = address,
 		.app_idx = unitControl->model->keys[0],
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 		.send_rel = true,
@@ -90,6 +93,7 @@ int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *bu
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET);
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET);
+
 	for (int i = 2; i < bufSize; ++i) {
 		net_buf_simple_add_u8(&msg, buf[i]);
 	}
@@ -253,7 +257,7 @@ static int btMeshUnitControlStart(struct bt_mesh_model *model)
 	struct btMeshUnitControl *unitControl = model->user_data;
 
 	if (unitControl->handlers->start) {
-		unitControl->handlers->start(unitControl);
+		//	unitControl->handlers->start(unitControl);
 	}
 
 	return 0;
@@ -269,27 +273,58 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.start = btMeshUnitControlStart,
 	.reset = btMeshUnitControlReset,
 };
+static dataQueueItemType FormatUartEncodeFullCmd(dataQueueItemType uartTxQueueItem,
+						 const struct btMeshUnitControl *unitControl)
+
+{
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->mode;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->onOff;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->fanSpeed;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		unitControl->tempValues.currentTemp.val1;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		unitControl->tempValues.currentTemp.val2;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		unitControl->tempValues.targetTemp.val1;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		unitControl->tempValues.targetTemp.val2;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = unitControl->unitControlType;
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+
+	return uartTxQueueItem;
+}
 
 static void unitControlFullCmd(struct btMeshUnitControl *unitControl, struct bt_mesh_msg_ctx *ctx)
 {
 	// Send to the HUB
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
+	uartTxQueueItem = FormatUartEncodeFullCmd(uartTxQueueItem, unitControl);
+
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
 
 static int8_t unitControlFullCmdSet(struct btMeshUnitControl *unitControl,
 				    struct bt_mesh_msg_ctx *ctx)
 
 {
-	// TODO instead of passing in params those params use a buffer
-	// TODO save into the flash the last command
-	//  send via uart the fullCmd
-
+	// send to the CB
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SET, false);
+	uartTxQueueItem = FormatUartEncodeFullCmd(uartTxQueueItem, unitControl);
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	return 0;
 }
 
 static void unitControlHandleFullCmdSetAck(struct btMeshUnitControl *unitControl,
 					   struct bt_mesh_msg_ctx *ctx, uint8_t ack)
 {
-	// TODO send via uart to the HUB
+	// send to the hub
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SETACK, false);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = ack; // status
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
 
 static void unitControlStart(struct btMeshUnitControl *unitControl)

@@ -9,6 +9,8 @@
 #include <string.h>
 #include <zephyr/logging/log.h>
 #include "storage_aa.h"
+#include "uart_aa.h"
+#include "message_format_aa.h"
 
 LOG_MODULE_REGISTER(vnd_activation, LOG_LEVEL_INF);
 #define ACTIVATION_TIMER 10
@@ -48,11 +50,11 @@ int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr)
 	return bt_mesh_model_send(activation->model, &ctx, &buf, NULL, NULL);
 }
 
-int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint16_t pwd,
-			 bool timerIsActive)
+int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t address, uint8_t *buffer,
+			 size_t len)
 {
 	struct bt_mesh_msg_ctx ctx = {
-		.addr = addr,
+		.addr = address,
 		.app_idx = activation->model->keys[0],
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 		.send_rel = true,
@@ -62,8 +64,8 @@ int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uin
 				 BT_MESH_MODEL_ACTIVATION_OP_LEN_PWD_SET);
 	bt_mesh_model_msg_init(&buf, BT_MESH_MODEL_ACTIVATION_OP_PWD_SET);
 
-	net_buf_simple_add_le16(&buf, pwd);
-	net_buf_simple_add_u8(&buf, timerIsActive);
+	net_buf_simple_add_le16(&buf, *(uint16_t *)&buffer[0]); // password
+	net_buf_simple_add_u8(&buf, buffer[0]); // activation boolean
 	LOG_INF("Send [activation][SETPWD] op[0x%06x] from addr:0x%04x. to :0x%04x. tid:-- ",
 		BT_MESH_MODEL_ACTIVATION_OP_PWD_SET, bt_mesh_model_elem(activation->model)->addr,
 		ctx.addr);
@@ -76,13 +78,13 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 {
 	LOG_INF("Received [activation][SETPWD] op[0x%06x] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
 		model->op->opcode, ctx->addr, ctx->recv_dst, ctx->recv_rssi);
-	uint16_t pwd = net_buf_simple_pull_le16(buf);
-	bool timerIsActive = net_buf_simple_pull_u8(buf);
 
 	struct btMeshActivation *activation = model->user_data;
+	activation->pwd = net_buf_simple_pull_le16(buf);
+	activation->timerIsActive = net_buf_simple_pull_u8(buf);
 
 	if (activation->handlers->setPwd) {
-		activation->handlers->setPwd(activation, timerIsActive, pwd);
+		activation->handlers->setPwd(activation, ctx);
 	}
 
 	return encodeStatus(model, ctx);
@@ -94,20 +96,14 @@ static int handleStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 	LOG_INF("Received [activation][STATUS] op[0x%06x] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
 		model->op->opcode, ctx->addr, ctx->recv_dst, ctx->recv_rssi);
 
-	// Extract data from buffer
-	uint8_t timerIsActive = net_buf_simple_pull_u8(buf);
-	uint32_t timeRemaining = net_buf_simple_pull_le32(buf);
-
-	// Log result to console
-	LOG_DBG("Result timerIsActive: [%s] Time remaining: [%d]", timerIsActive ? "true" : "false",
-		timeRemaining);
-
 	// Get user data from model
 	struct btMeshActivation *activation = model->user_data;
+	activation->timerIsActive = net_buf_simple_pull_u8(buf);
+	activation->timeRemaining = net_buf_simple_pull_le32(buf);
 
 	// Invoke status handler if present
 	if (activation->handlers->status) {
-		activation->handlers->status(model, ctx, buf);
+		activation->handlers->status(activation, ctx);
 	}
 	return 0;
 }
@@ -167,15 +163,31 @@ const struct bt_mesh_model_cb btMeshActivationCb = {
 	.reset = btMeshActivationReset,
 };
 
-static int activationSetPwd(struct btMeshActivation *activation, bool timerIsActive, uint8_t pwd)
+static int activationSetPwd(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx)
 {
-	// transfer pwd vi auart
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SETACK, false);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = (uint8_t)(activation->pwd & 0xFF);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		(uint8_t)((activation->pwd >> 8) & 0xFF);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive;
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+
 	return 0;
 }
 
-static int activationStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf)
+static int activationStatus(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx)
 {
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, ACTIVATION_TYPE, STATUS, false);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timeRemaining;
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive; // status
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+
 	return 0;
 }
 
