@@ -9,7 +9,7 @@
 #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 #include "model_level_aa.h"
-#include "vnd_unit_control_aa.h"
+#include "vnd_unit_control_server_aa.h"
 #include <zephyr/logging/log.h>
 #include "uart_aa.h"
 #include "message_format_aa.h"

@@ -79,6 +79,7 @@ static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 					publisherQueueItem.length = payloadSize;
 					memcpy(publisherQueueItem.bufferItem,
 					       &message[START_FRAME_SIZE], payloadSize);
+
 					int err = k_msgq_put(&publisherQueue, &publisherQueueItem,
 							     K_NO_WAIT);
 					if (err) {
@@ -153,7 +154,9 @@ void uartTxThread(void)
 
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
+
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
+
 		if (ret) {
 			k_msleep(5);
 			ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
@@ -185,7 +188,6 @@ int uartInit(void)
 	if (ret) {
 		return 1;
 	}
-	k_sem_give(&tx_done);
 
 	return 0;
 }
@@ -197,15 +199,9 @@ void uartHandler(const struct device *dev, struct uart_event *evt, void *user_da
 
 	switch (evt->type) {
 	case UART_TX_ABORTED:
-
-		k_sem_give(&tx_done);
 		LOG_ERR("UART_TX_ABORTED");
-
 		break;
 	case UART_TX_DONE:
-
-		k_sem_give(&tx_done);
-
 		break;
 	case UART_RX_RDY:
 		uartReceiveQueueItem.length = evt->data.rx.len;
@@ -215,7 +211,6 @@ void uartHandler(const struct device *dev, struct uart_event *evt, void *user_da
 		if (err) {
 			LOG_ERR("UART message queue full, dropping data.");
 		}
-
 		break;
 	case UART_RX_BUF_REQUEST:
 		nextBuf = (nextBuf == doubleBuffer[0]) ? doubleBuffer[1] : doubleBuffer[0];

@@ -11,7 +11,7 @@
 #include "model_handler.h"
 #include "model_sensor_cli_aa.h"
 #include "model_level_cli_aa.h"
-#include "vnd_unit_control_aa.h"
+#include "vnd_unit_control_client_aa.h"
 #include "vnd_activation_aa.h"
 #include "uart_aa.h"
 #include "message_format_aa.h"
@@ -25,7 +25,7 @@ static struct bt_mesh_lvl_cli btMeshlevelMotorCli = BT_MESH_LVL_CLI_INIT(&levelM
 
 static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
-static struct btMeshUnitControl unitControl = {
+struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
