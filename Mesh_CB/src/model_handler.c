@@ -32,7 +32,7 @@ struct btMeshlevelMotor levelMotors[] = {
 	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
 };
 
-static struct btMeshUnitControl unitControl = {
+struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
@@ -53,20 +53,23 @@ void publisherThread(void)
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
 		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-				"Cb Publisher CB");
+				"Publisher Thread");
 
 		switch (publisherQueueItem.bufferItem[0]) {
-		case STATUS:
-			//update the unit control data model
-			unitControlUpdateStatus(&unitControl ,publisherQueueItem.bufferItem, publisherQueueItem.length);
-			break;
+		case UNIT_CONTROL_TYPE:
 
-		case SETACK:
-			//receive ack 
-			//k_timer_stop(&setAckTimer);
-			sendUnitControlFullCmdSetAck(&unitControl,1);
-			//send uart status to the cb the update the the data model 
-			sendToCbUartStatus();
+			if (publisherQueueItem.bufferItem[1] == SETACK) {
+				LOG_INF("reveived uart [status] message from the Cb");
+				sendUnitControlFullCmdSetAck(&unitControl, 1);
+
+			} else if (publisherQueueItem.bufferItem[1] == STATUS) {
+				LOG_INF("reveived uart [status] message from the Cb");
+				unitControlUpdateStatus(&unitControl, publisherQueueItem.bufferItem,
+							publisherQueueItem.length);
+			}
+
+			break;
+		case ACTIVATION_TYPE:
 			break;
 
 		default:

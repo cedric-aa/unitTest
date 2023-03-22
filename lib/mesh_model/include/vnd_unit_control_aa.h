@@ -126,21 +126,10 @@ int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t ad
 int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
 			      uint16_t address);
 
-void unitControlUpdateStatus(struct btMeshUnitControl *unitControl ,uint8_t *buf, size_t bufSize);
+void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize);
 void sendToCbUartStatus();
 
-//extern struct k_timer setAckTimer;
-//extern struct k_timer updateTimer;
-
-
-
-//extern void expirysetAckTimer(struct k_timer *timer_id);
-//extern void expiryupdateTimer(struct k_timer *timer_id);
-
-
-
-
-
+extern struct btMeshUnitControl unitControl;
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshUnitControlOp[];
