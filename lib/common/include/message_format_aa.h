@@ -18,13 +18,13 @@ typedef struct {
 	uint16_t address;
 	uint8_t messageType;
 	uint8_t messageID;
-	uint8_t payloadBuffer[16];
+	uint8_t payloadBuffer[32];
 	size_t payloadLength;
 	uint8_t sequenceNumber;
 } processedMessage;
 
 typedef struct {
-	uint8_t bufferItem[16];
+	uint8_t bufferItem[32];
 	int length;
 } dataQueueItemType;
 

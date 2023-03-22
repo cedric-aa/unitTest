@@ -12,8 +12,8 @@ LOG_MODULE_REGISTER(uart_AA, LOG_LEVEL_DBG);
 #define THREAD_UART_STACKSIZE 2048
 #define THREAD_UART_PRIORITY 14
 #define RECEIVE_TIMEOUT 1000
-#define BUF_SIZE 16
-#define TX_BUF_SIZE 50
+#define BUF_SIZE 32
+#define TX_BUF_SIZE 32
 #define START_BYTE 0x7E
 #define END_BYTE 0x7F
 #define END_OF_FRAME_SIZE 3 // include crc1 + crc2 +  END_BYTE
@@ -121,8 +121,6 @@ static void framedDataWithCRC(dataQueueItemType *uartTxQueueItem)
 	uint8_t initLength = uartTxQueueItem->length;
 	uint8_t temp[initLength + 4];
 	unsigned short crc = crc16Ccitt(&uartTxQueueItem->bufferItem[1], initLength - 1);
-	LOG_ERR("crc calcul %02x", crc);
-
 	// Set the frame data
 	temp[0] = START_BYTE;
 	memcpy(&temp[1], uartTxQueueItem->bufferItem, initLength);
@@ -141,6 +139,10 @@ void uartReceiveThread(void)
 
 	while (1) {
 		k_msgq_get(&uartMsgq, &uartReceiveQueueItem, K_FOREVER);
+
+		LOG_HEXDUMP_INF(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length,
+				"uart Receive Thread Thread");
+
 		uartStateMachine(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length);
 	}
 }
@@ -152,8 +154,13 @@ void uartTxThread(void)
 	while (1) {
 		k_msgq_get(&uartTxQueue, &uartTxQueueItem, K_FOREVER);
 
+		LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
+				"uart Tx Thread Thread");
+
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
+
+		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer tx");
 
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
 

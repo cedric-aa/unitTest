@@ -43,7 +43,7 @@ int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *bu
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET);
 
-	for (int i = 2; i < bufSize; ++i) {
+	for (int i = 5; i < bufSize; ++i) {
 		net_buf_simple_add_u8(&msg, buf[i]);
 	}
 
@@ -61,6 +61,13 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 		ctx->addr, ctx->recv_dst, ctx->recv_rssi);
 
 	struct btMeshUnitControl *unitControl = model->user_data;
+	LOG_HEXDUMP_INF(buf->data, buf->len, "net_buf");
+
+	uint8_t buff[buf->len];
+	uint8_t len = buf->len;
+	memcpy(buff, buf->data, buf->len);
+
+	LOG_HEXDUMP_INF(buff, len, "net_buf");
 
 	unitControl->mode = net_buf_simple_pull_u8(buf);
 	unitControl->onOff = net_buf_simple_pull_u8(buf);
@@ -73,7 +80,7 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	printClientStatus(unitControl);
 
 	if (unitControl->handlers->fullCmd) {
-		unitControl->handlers->fullCmd(ctx, buf);
+		unitControl->handlers->fullCmd(ctx, buff, len);
 	}
 
 	return 0;
@@ -122,12 +129,14 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.init = btMeshUnitControlInit,
 };
 
-static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf)
+static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8_t len)
 {
 	// Send to the HUB
 	dataQueueItemType uartTxQueueItem =
 		headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
-	formatUartEncodeFullCmd(&uartTxQueueItem, buf);
+	LOG_INF("here");
+	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
+	LOG_INF("here 2");
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
 

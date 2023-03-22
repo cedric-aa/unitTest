@@ -10,7 +10,7 @@
 #include "vnd_unit_control_aa.h"
 
 struct btMeshUnitControlHandlers {
-	void (*const fullCmdSet)(struct net_buf_simple *buf);
+	void (*const fullCmdSet)(uint8_t *buff, uint8_t len);
 };
 
 void sendUnitControlFullCmdSetAck(struct btMeshUnitControl *unitControl, uint8_t result);
@@ -18,6 +18,9 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 void sendToCbUartStatus();
 
 extern struct btMeshUnitControl unitControl;
+
+extern struct k_timer setAckTimer;
+extern struct k_timer updateTimer;
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshUnitControlOp[];

@@ -48,7 +48,7 @@ void publisherThread(void)
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
 		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-				"Sample date");
+				"Hub Publisher Thread");
 
 		processedMessage processedMessage = processPublisherQueueItem(&publisherQueueItem);
 

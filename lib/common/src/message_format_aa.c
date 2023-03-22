@@ -30,7 +30,7 @@ dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint
 {
 	dataQueueItemType uartTxQueueItem;
 	uartTxQueueItem.length = 6;
-	uartTxQueueItem.bufferItem[0] = 6; // payload length
+	uartTxQueueItem.bufferItem[0] = 5; // payload length
 	uartTxQueueItem.bufferItem[1] = 0; // uartAck
 	uartTxQueueItem.bufferItem[2] = (uint8_t)(addr & 0xFF); // low byte of address
 	uartTxQueueItem.bufferItem[3] = (uint8_t)((addr >> 8) & 0xFF); // high byte of address
@@ -40,12 +40,12 @@ dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint
 	return uartTxQueueItem;
 }
 
-dataQueueItemType headerCbFormatUartTx(uint8_t messageType,uint8_t messageID)
+dataQueueItemType headerCbFormatUartTx(uint8_t messageType, uint8_t messageID)
 {
 	dataQueueItemType uartTxQueueItem;
 	uartTxQueueItem.length = 3;
-	uartTxQueueItem.bufferItem[0] = 3; // payload length
-	uartTxQueueItem.bufferItem[1] = messageType; 
-	uartTxQueueItem.bufferItem[2] = messageID; 
+	uartTxQueueItem.bufferItem[0] = 2; // payload length
+	uartTxQueueItem.bufferItem[1] = messageType;
+	uartTxQueueItem.bufferItem[2] = messageID;
 	return uartTxQueueItem;
 }

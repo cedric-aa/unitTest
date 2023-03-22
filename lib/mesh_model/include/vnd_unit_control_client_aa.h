@@ -12,7 +12,7 @@
 
 /** Bluetooth Mesh unitControl model handlers. */
 struct btMeshUnitControlHandlers {
-	void (*const fullCmd)(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
+	void (*const fullCmd)(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8_t len);
 	void (*const fullCmdSetAck)(struct btMeshUnitControl *unitControl,
 				    struct bt_mesh_msg_ctx *ctx, uint8_t status);
 };

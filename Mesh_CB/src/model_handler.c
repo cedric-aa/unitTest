@@ -19,18 +19,7 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 #define THREAD_PUBLISHER_STACKSIZE 2048
 #define THREAD_PUBLISHER_PRIORITY 14
 
-struct btMeshlevelMotor levelMotors[] = {
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-};
+struct btMeshlevelMotor levelMotors[] = { { .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) } };
 
 struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
@@ -53,7 +42,7 @@ void publisherThread(void)
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
 		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-				"Publisher Thread");
+				"Cb Publisher Thread");
 
 		switch (publisherQueueItem.bufferItem[0]) {
 		case UNIT_CONTROL_TYPE:
@@ -126,24 +115,6 @@ static struct bt_mesh_elem elements[] = {
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
 					BT_MESH_MODEL_ACTIVATION(&activation),
 					BT_MESH_MODEL_LVL_SRV(&levelMotors[0].srvLvl))),
-	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[1].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(3, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[2].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(4, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[3].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(5, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[4].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(6, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[5].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(7, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[6].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(8, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[7].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(9, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[8].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(10, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[9].srvLvl)),
-		     BT_MESH_MODEL_NONE),
 };
 
 static const struct bt_mesh_comp comp = {

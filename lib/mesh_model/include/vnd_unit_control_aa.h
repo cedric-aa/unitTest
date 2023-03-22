@@ -116,7 +116,7 @@ struct btMeshUnitControl {
 extern struct btMeshUnitControl unitControl;
 
 void printClientStatus(struct btMeshUnitControl *unitControl);
-void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, struct net_buf_simple *buf);
+void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, uint8_t *buff, uint8_t len);
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshUnitControlOp[];
 extern const struct bt_mesh_model_cb btMeshUnitControlCb;

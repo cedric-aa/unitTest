@@ -14,7 +14,9 @@ static void expiryupdateTimer(struct k_timer *timer_id)
 	LOG_DBG("expiryupdateTimer");
 	sendToCbUartStatus();
 	if (timer_id->status > 5) {
+		LOG_ERR("timer_id->status > 5 send Message Alert");
 		//send alert to the hub
+		k_timer_stop(&updateTimer);
 	}
 }
 
@@ -25,8 +27,8 @@ static void expirysetAckTimer(struct k_timer *timer_id)
 	sendUnitControlFullCmdSetAck(&unitControl, 1);
 }
 
-K_TIMER_DEFINE(setAckTimer, expirysetAckTimer, NULL);
 K_TIMER_DEFINE(updateTimer, expiryupdateTimer, NULL);
+K_TIMER_DEFINE(setAckTimer, expirysetAckTimer, NULL);
 
 static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
 			  struct btMeshUnitControl *unitControl)
@@ -89,8 +91,13 @@ static int handleFullCmdSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 
 	struct btMeshUnitControl *unitControl = model->user_data;
 
+	LOG_HEXDUMP_INF(buf->data, buf->len, "net_buf");
+
+	uint8_t buff[buf->len];
+	memcpy(buff, buf->data, buf->len);
+
 	if (unitControl->handlers->fullCmdSet) {
-		unitControl->handlers->fullCmdSet(buf);
+		unitControl->handlers->fullCmdSet(buff, buf->len);
 	}
 
 	return 0;
@@ -122,14 +129,23 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 				      sizeof(unitControl->buf));
 	unitControl->pub.msg = &unitControl->pubMsg;
 	unitControl->pub.update = btMeshUnitControlUpdateHandler;
+
+	unitControl->mode = 1;
+	unitControl->onOff = 1;
+	unitControl->fanSpeed = 1;
+	unitControl->tempValues.currentTemp.val1 = 1;
+	unitControl->tempValues.currentTemp.val2 = 1;
+	unitControl->tempValues.targetTemp.val1 = 1;
+	unitControl->tempValues.targetTemp.val2 = 1;
+	unitControl->unitControlType = 1;
 	return 0;
 }
 
 static int btMeshUnitControlStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("btMeshUnitControlStart");
-	k_timer_start(&updateTimer, K_SECONDS(1), K_SECONDS(1));
-	sendToCbUartStatus();
+	k_timer_start(&updateTimer, K_SECONDS(1), K_SECONDS(10));
+	//sendToCbUartStatus();
 	return 0;
 }
 
@@ -144,11 +160,11 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.reset = btMeshUnitControlReset,
 };
 
-static void unitControlFullCmdSet(struct net_buf_simple *buf)
+static void unitControlFullCmdSet(uint8_t *buff, uint8_t len)
 {
 	// send to the CB
 	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(UNIT_CONTROL_TYPE, SET);
-	formatUartEncodeFullCmd(&uartTxQueueItem, buf);
+	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	int ret = k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	if (!ret) {
 		k_timer_start(&setAckTimer, K_SECONDS(1), K_FOREVER);
@@ -169,6 +185,8 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 	unitControl->tempValues.targetTemp.val1 = buf[7];
 	unitControl->tempValues.targetTemp.val2 = buf[8];
 	unitControl->unitControlType = buf[9];
+
+	printClientStatus(unitControl);
 }
 
 void sendToCbUartStatus()

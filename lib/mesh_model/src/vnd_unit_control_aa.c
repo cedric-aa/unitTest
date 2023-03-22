@@ -33,10 +33,10 @@ void printClientStatus(struct btMeshUnitControl *unitControl)
 	LOG_DBG("Unit Control Type: [%d] ", unitControl->unitControlType);
 }
 
-void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, struct net_buf_simple *buf)
+void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, uint8_t *buff, uint8_t len)
 
 {
-	memcpy(&uartTxQueueItem->bufferItem[uartTxQueueItem->length + 1], buf->data, buf->len);
-	uartTxQueueItem->bufferItem[0] = uartTxQueueItem->length + buf->len;
-	uartTxQueueItem->length = uartTxQueueItem->length + buf->len;
+	memcpy(&uartTxQueueItem->bufferItem[uartTxQueueItem->length], buff, len);
+	uartTxQueueItem->bufferItem[0] = uartTxQueueItem->bufferItem[0] + len;
+	uartTxQueueItem->length = uartTxQueueItem->length + len;
 }
