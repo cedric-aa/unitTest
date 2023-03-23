@@ -47,9 +47,9 @@ void publisherThread(void)
 		switch (publisherQueueItem.bufferItem[0]) {
 		case UNIT_CONTROL_TYPE:
 
-			if (publisherQueueItem.bufferItem[1] == SETACK) {
-				LOG_INF("reveived uart [status] message from the Cb");
-				sendUnitControlFullCmdSetAck(&unitControl, 1);
+			if (publisherQueueItem.bufferItem[1] == STATUS_CODE) {
+				LOG_INF("reveived uart [STATUS_CODE] message from the Cb");
+				sendUnitControlStatusCode(&unitControl, 1);
 
 			} else if (publisherQueueItem.bufferItem[1] == STATUS) {
 				LOG_INF("reveived uart [status] message from the Cb");
@@ -133,3 +133,6 @@ const struct bt_mesh_comp *model_handler_init(void)
 
 	return &comp;
 }
+
+K_THREAD_DEFINE(publisherThread_id, THREAD_PUBLISHER_STACKSIZE, publisherThread, NULL, NULL, NULL,
+		THREAD_PUBLISHER_PRIORITY, 0, 0);

@@ -165,11 +165,10 @@ const struct bt_mesh_model_cb btMeshActivationCb = {
 
 static int activationSetPwd(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx)
 {
-	dataQueueItemType uartTxQueueItem =
-		headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, SETACK, false);
+
+	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(ACTIVATION_TYPE, SET);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = (uint8_t)(activation->pwd & 0xFF);
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
-		(uint8_t)((activation->pwd >> 8) & 0xFF);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =(uint8_t)((activation->pwd >> 8) & 0xFF);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive;
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
 

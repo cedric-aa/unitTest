@@ -13,7 +13,7 @@ struct btMeshUnitControlHandlers {
 	void (*const fullCmdSet)(uint8_t *buff, uint8_t len);
 };
 
-void sendUnitControlFullCmdSetAck(struct btMeshUnitControl *unitControl, uint8_t result);
+void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint8_t result);
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize);
 void sendToCbUartStatus();
 
