@@ -9,25 +9,19 @@
 #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 #include "model_level_aa.h"
-#include "vnd_unit_control_aa.h"
+#include "vnd_unit_control_server_aa.h"
 #include <zephyr/logging/log.h>
+#include "uart_aa.h"
+#include "message_format_aa.h"
 
 LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
-struct btMeshlevelMotor levelMotors[] = {
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-	{ .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) },
-};
+#define THREAD_PUBLISHER_STACKSIZE 2048
+#define THREAD_PUBLISHER_PRIORITY 14
 
-static struct btMeshUnitControl unitControl = {
+struct btMeshlevelMotor levelMotors[] = { { .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) } };
+
+struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
@@ -39,6 +33,39 @@ static struct btMeshActivation activation = {
 struct settingsControlState settingsCtlState = { .activation = &activation };
 
 struct settingsControlState *const ctl = &settingsCtlState;
+
+void publisherThread(void)
+{
+	dataQueueItemType publisherQueueItem;
+
+	while (1) {
+		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
+
+		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
+				"Cb Publisher Thread");
+
+		switch (publisherQueueItem.bufferItem[0]) {
+		case UNIT_CONTROL_TYPE:
+
+			if (publisherQueueItem.bufferItem[1] == STATUS_CODE) {
+				LOG_INF("reveived uart [STATUS_CODE] message from the Cb");
+				sendUnitControlStatusCode(&unitControl, 1);
+
+			} else if (publisherQueueItem.bufferItem[1] == STATUS) {
+				LOG_INF("reveived uart [status] message from the Cb");
+				unitControlUpdateStatus(&unitControl, publisherQueueItem.bufferItem,
+							publisherQueueItem.length);
+			}
+
+			break;
+		case ACTIVATION_TYPE:
+			break;
+
+		default:
+			break;
+		}
+	}
+}
 
 /* Set up a repeating delayed work to blink the DK's LEDs when attention is
  * requested.
@@ -88,24 +115,6 @@ static struct bt_mesh_elem elements[] = {
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
 					BT_MESH_MODEL_ACTIVATION(&activation),
 					BT_MESH_MODEL_LVL_SRV(&levelMotors[0].srvLvl))),
-	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[1].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(3, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[2].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(4, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[3].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(5, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[4].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(6, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[5].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(7, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[6].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(8, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[7].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(9, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[8].srvLvl)),
-		     BT_MESH_MODEL_NONE),
-	BT_MESH_ELEM(10, BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_SRV(&levelMotors[9].srvLvl)),
-		     BT_MESH_MODEL_NONE),
 };
 
 static const struct bt_mesh_comp comp = {
@@ -124,3 +133,6 @@ const struct bt_mesh_comp *model_handler_init(void)
 
 	return &comp;
 }
+
+K_THREAD_DEFINE(publisherThread_id, THREAD_PUBLISHER_STACKSIZE, publisherThread, NULL, NULL, NULL,
+		THREAD_PUBLISHER_PRIORITY, 0, 0);

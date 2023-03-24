@@ -7,22 +7,25 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
+#include <zephyr/logging/log.h>
 #include "model_handler.h"
 #include "model_sensor_cli_aa.h"
 #include "model_level_cli_aa.h"
-#include "vnd_unit_control_aa.h"
+#include "vnd_unit_control_client_aa.h"
 #include "vnd_activation_aa.h"
-#include <zephyr/logging/log.h>
+#include "uart_aa.h"
+#include "message_format_aa.h"
 
 LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
-#define GET_DATA_INTERVAL 5000
+#define THREAD_PUBLISHER_STACKSIZE 2048
+#define THREAD_PUBLISHER_PRIORITY 14
 
 static struct bt_mesh_lvl_cli btMeshlevelMotorCli = BT_MESH_LVL_CLI_INIT(&levelMotorStatusHandler);
 
 static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
-static struct btMeshUnitControl unitControl = {
+struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
@@ -35,6 +38,80 @@ struct SettingsControlState settingsCtlState = {
 };
 
 struct SettingsControlState *const ctl = &settingsCtlState;
+
+void publisherThread(void)
+{
+	dataQueueItemType publisherQueueItem;
+	int err;
+
+	while (1) {
+		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
+
+		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
+				"Hub Publisher Thread");
+
+		processedMessage processedMessage = processPublisherQueueItem(&publisherQueueItem);
+
+		if (!bt_mesh_is_provisioned()) {
+			err = -1;
+		} else {
+			switch (processedMessage.messageType) {
+			case UNIT_CONTROL_TYPE:
+
+				if (processedMessage.messageID == SET) {
+					err = sendUnitControlFullCmdSet(
+						&unitControl, processedMessage.payloadBuffer,
+						processedMessage.payloadLength,
+						processedMessage.address);
+				} else if (processedMessage.messageID == GET) {
+					err = sendUnitControlFullCmdGet(&unitControl,
+									processedMessage.address);
+				}
+				break;
+			case ACTIVATION_TYPE:
+
+				if (processedMessage.messageID == SET) {
+					err = sendActivationSetPwd(&activation,
+								   processedMessage.address,
+								   processedMessage.payloadBuffer,
+								   processedMessage.payloadLength);
+				} else if (processedMessage.messageID == GET) {
+					err = sendActivationGetStatus(&activation,
+								      processedMessage.address);
+				}
+
+				break;
+			case SENSOR_TYPE:
+
+				if (processedMessage.messageID == GET) {
+					err = bt_mesh_sensor_cli_get(
+						&btMeshsensorCli, NULL,
+						&bt_mesh_sensor_present_dev_op_temp, NULL);
+				}
+
+				break;
+			case MOTOR_LEVEL:
+
+				if (processedMessage.messageID == SET) {
+					////make generic model as custom
+					err = sendSetLvl(btMeshlevelMotorCli);
+				} else if (processedMessage.messageID == GET) {
+					err = sendGetLvl(btMeshlevelMotorCli);
+				}
+
+				break;
+
+			default:
+				break;
+			}
+		}
+		if (processedMessage.isUartAck) {
+			// send throug uart the response
+			// err code
+			// push it to the queue handled by the uart thread
+		}
+	}
+}
 
 static void button_handler_cb(uint32_t pressed, uint32_t changed)
 {
@@ -132,3 +209,6 @@ const struct bt_mesh_comp *model_handler_init(void)
 
 	return &comp;
 }
+
+K_THREAD_DEFINE(publisherThread_id, THREAD_PUBLISHER_STACKSIZE, publisherThread, NULL, NULL, NULL,
+		THREAD_PUBLISHER_PRIORITY, 0, 0);

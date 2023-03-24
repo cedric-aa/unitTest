@@ -49,7 +49,7 @@ struct btMeshActivationHandlers {
      * @param[in] ctx Context of the incoming message.
      * @param[in] pwd of a Activation client published
      */
-	int (*const setPwd)(struct btMeshActivation *activation, bool activate, uint8_t pwd);
+	int (*const setPwd)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx);
 
 	/** @brief Handler for a Get Status message.
      *
@@ -57,8 +57,7 @@ struct btMeshActivationHandlers {
      * @param[in] ctx Context of the incoming message.
      * @param[in] buf net_buf_simple buffer including the status info
      */
-	int (*const status)(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			    struct net_buf_simple *buf);
+	int (*const status)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx);
 };
 
 /**
@@ -77,12 +76,12 @@ struct btMeshActivation {
 	bool timerIsActive;
 	uint16_t pwd;
 	uint32_t timeRemaining;
-	bool lock;
+	uint8_t seqNumber;
 };
 
 int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr);
-int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint16_t pwd,
-			 bool timerIsActive);
+int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint8_t *buffer,
+			 size_t len);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshActivationOp[];
