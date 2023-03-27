@@ -10,8 +10,8 @@
 #include <zephyr/logging/log.h>
 #include "model_handler.h"
 #include "model_sensor_cli_aa.h"
-#include "model_level_cli_aa.h"
 #include "vnd_unit_control_client_aa.h"
+#include "vnd_motor_aa.h"
 #include "vnd_activation_aa.h"
 #include "uart_aa.h"
 #include "message_format_aa.h"
@@ -21,14 +21,15 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 #define THREAD_PUBLISHER_STACKSIZE 2048
 #define THREAD_PUBLISHER_PRIORITY 14
 
-static struct bt_mesh_lvl_cli btMeshlevelMotorCli = BT_MESH_LVL_CLI_INIT(&levelMotorStatusHandler);
-
 static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
 struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
+static struct btMeshMotor motor = {
+	.handlers = &motorHandlers,
+};
 static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
 };
@@ -90,11 +91,15 @@ void publisherThread(void)
 				}
 
 				break;
-			case MOTOR_LEVEL:
+			case MOTOR_TYPE:
 
 				if (processedMessage.messageID == SET) {
-					////make generic model as custom
-					err = sendSetLvl(btMeshlevelMotorCli);
+					err = sendSetIdMotorLevel(
+						motor, processedMessage.address,
+						processedMessage.payloadBuffer[0],
+						processedMessage.payloadBuffer[1],
+						processedMessage.payloadBuffer[2]);
+
 				} else if (processedMessage.messageID == GET) {
 					err = sendGetLvl(btMeshlevelMotorCli);
 				}
@@ -189,10 +194,9 @@ static struct bt_mesh_elem elements[] = {
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 					BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
-					BT_MESH_MODEL_ACTIVATION(&activation))),
-	BT_MESH_ELEM(2,
-		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_CLI(&btMeshlevelMotorCli),
-					BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
+					BT_MESH_MODEL_ACTIVATION(&activation),
+					BT_MESH_MODEL_MOTOR(&motor))),
+	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
 		     BT_MESH_MODEL_NONE)
 };
 

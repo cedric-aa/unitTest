@@ -16,14 +16,20 @@
 #define BT_MESH_CB_MODEL_MOTOR_ID 0x000C
 
 /*Opcode*/
-#define BT_MESH_MODEL_MOTOR_OP_GET BT_MESH_MODEL_OP_3(0x0A, BT_MESH_CB_MODEL_ACTIVATION_ID)
-#define BT_MESH_MODEL_MOTOR_OP_SET BT_MESH_MODEL_OP_3(0x0B, BT_MESH_CB_MODEL_ACTIVATION_ID)
-#define BT_MESH_MODEL_MOTOR_OP_STATUS BT_MESH_MODEL_OP_3(0x0C, BT_MESH_CB_MODEL_ACTIVATION_ID)
+#define BT_MESH_MODEL_MOTOR_OP_GET_ALL BT_MESH_MODEL_OP_3(0x0A, BT_MESH_CB_MODEL_MOTOR_ID)
+#define BT_MESH_MODEL_MOTOR_OP_GET_ID BT_MESH_MODEL_OP_3(0x0B, BT_MESH_CB_MODEL_MOTOR_ID)
+#define BT_MESH_MODEL_MOTOR_OP_SET BT_MESH_MODEL_OP_3(0x0C, BT_MESH_CB_MODEL_MOTOR_ID)
+#define BT_MESH_MODEL_MOTOR_OP_STATUS_ID BT_MESH_MODEL_OP_3(0x0D, BT_MESH_CB_MODEL_MOTOR_ID)
+#define BT_MESH_MODEL_MOTOR_OP_STATUS_ALL BT_MESH_MODEL_OP_3(0x0E, BT_MESH_CB_MODEL_MOTOR_ID)
+#define BT_MESH_MODEL_MOTOR_OP_STATUS_CODE BT_MESH_MODEL_OP_3(0x0E, BT_MESH_CB_MODEL_MOTOR_ID)
 
 /*OpCode Len*/
-#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_GET 0
+#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_GET_ID 2
+#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_GET_ALL 1
 #define BT_MESH_MODEL_MOTOR_OP_LEN_SET 3
-#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS 5
+#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ID 3
+#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ALL 11
+#define BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_CODE 2
 
 /* Forward declaration of the Bluetooth Mesh Motor model context. */
 struct btMeshMotor;
@@ -41,19 +47,8 @@ struct btMeshMotor;
 
 /** Bluetooth Mesh  model handlers. */
 struct btMeshMotorHandlers {
-	/** @brief Handler for a mode message.
-     *
-     * @param[in] motor instance 
-     * @param[in] ctx Context of the incoming message.
-     */
-	int (*const set)(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx);
-
-	/** @brief Handler for a Get Status message.
-     *
-     * @param[in]  Activation instance
-     * @param[in] ctx Context of the incoming message.
-     */
-	int (*const status)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx);
+	int (*const forwardToUart)(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx,
+				   uint8_t messageId, uint8_t *buf, uint8_t len)
 };
 
 /**
@@ -64,8 +59,8 @@ struct btMeshMotor {
 	struct bt_mesh_model *model;
 	struct bt_mesh_model_pub pub;
 	struct net_buf_simple pubMsg;
-	uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_MOTOR_OP_STATUS,
-					  BT_MESH_MODEL_MOTOR_OP_LEN_STATUS)];
+	uint8_t buf[BT_MESH_MODEL_BUF_LEN(BT_MESH_MODEL_MOTOR_OP_STATUS_ALL,
+					  BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ALL)];
 	const struct btMeshMotorHandlers *handlers;
 
 	// Added fields
@@ -73,8 +68,10 @@ struct btMeshMotor {
 	uint8_t seqNumber;
 };
 
+int sendGetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t id, uint8_t seqNum);
 int sendSetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t lvl, uint8_t id,
 			uint8_t seqNum);
+int sendGetAllMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t seqNum);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshMotorOp[];

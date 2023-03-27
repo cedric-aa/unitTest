@@ -4,13 +4,14 @@
 #include <stdint.h>
 #include <string.h>
 
-enum messageType { UNIT_CONTROL_TYPE = 1, ACTIVATION_TYPE = 2, SENSOR_TYPE = 3, MOTOR_LEVEL = 4 };
+enum messageType { UNIT_CONTROL_TYPE = 1, ACTIVATION_TYPE = 2, SENSOR_TYPE = 3, MOTOR_TYPE = 4 };
 
 enum messageId {
 	SET = 1,
 	STATUS = 2,
 	GET = 3,
 	STATUS_CODE = 4,
+	STATUS_ID = 5,
 };
 
 typedef struct {
@@ -29,7 +30,6 @@ typedef struct {
 } dataQueueItemType;
 
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem);
-dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
-					uint8_t uartAck);
-dataQueueItemType headerCbFormatUartTx(uint8_t messageType, uint8_t messageID);
+dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
+				     uint8_t uartAck);
 #endif
