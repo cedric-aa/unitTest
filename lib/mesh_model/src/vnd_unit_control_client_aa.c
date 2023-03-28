@@ -133,7 +133,7 @@ static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8
 {
 	// Send to the HUB
 	dataQueueItemType uartTxQueueItem =
-		headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
 	LOG_INF("here");
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	LOG_INF("here 2");
@@ -145,7 +145,7 @@ static void unitControlHandleSatusCode(struct btMeshUnitControl *unitControl,
 {
 	// send to the Hub
 	dataQueueItemType uartTxQueueItem =
-		headerHubFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS_CODE, false);
+		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS_CODE, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = ack; // status
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);

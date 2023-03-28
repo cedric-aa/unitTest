@@ -165,10 +165,11 @@ const struct bt_mesh_model_cb btMeshActivationCb = {
 
 static int activationSetPwd(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx)
 {
-
-	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(ACTIVATION_TYPE, SET);
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(ctx->addr, ACTIVATION_TYPE, SET, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = (uint8_t)(activation->pwd & 0xFF);
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =(uint8_t)((activation->pwd >> 8) & 0xFF);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] =
+		(uint8_t)((activation->pwd >> 8) & 0xFF);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive;
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
 
@@ -180,7 +181,7 @@ static int activationSetPwd(struct btMeshActivation *activation, struct bt_mesh_
 static int activationStatus(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx)
 {
 	dataQueueItemType uartTxQueueItem =
-		headerHubFormatUartTx(ctx->addr, ACTIVATION_TYPE, STATUS, false);
+		headerFormatUartTx(ctx->addr, ACTIVATION_TYPE, STATUS, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive;
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timeRemaining;
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = activation->timerIsActive; // status

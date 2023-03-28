@@ -106,7 +106,7 @@ static int handleFullCmdSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 	uint8_t buff[buf->len];
 	memcpy(buff, buf->data, buf->len);
 	if (unitControl->handlers->fullCmdSet) {
-		unitControl->handlers->fullCmdSet(buff, buf->len);
+		unitControl->handlers->fullCmdSet(ctx->addr,buff, sizeof(buff));
 	}
 
 	return 0;
@@ -168,10 +168,10 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.reset = btMeshUnitControlReset,
 };
 
-static void unitControlFullCmdSet(uint8_t *buff, uint8_t len)
+static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 {
 	// send to the CB
-	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(UNIT_CONTROL_TYPE, SET);
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(addr, UNIT_CONTROL_TYPE, SET, false);
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	int ret = k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	if (!ret) {
@@ -199,6 +199,7 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 void sendToCbUartStatus()
 {
 	LOG_INF("send uart [UNIT_CONTROL_TYPE][GET] to the Cb");
-	dataQueueItemType uartTxQueueItem = headerCbFormatUartTx(UNIT_CONTROL_TYPE, GET);
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }

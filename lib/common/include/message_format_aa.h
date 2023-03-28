@@ -12,6 +12,7 @@ enum messageId {
 	GET = 3,
 	STATUS_CODE = 4,
 	STATUS_ID = 5,
+	GET_ID = 6,
 };
 
 typedef struct {

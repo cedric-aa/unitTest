@@ -9,10 +9,28 @@
 
 LOG_MODULE_REGISTER(vnd_motor, LOG_LEVEL_INF);
 
-static int encodeStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
-			    uint8_t statusCode, uint8_t seqNum)
+void motorUpdateStatus(struct btMeshMotor *motor, uint8_t *buf, size_t bufSize)
 {
-	struct btMeshMotor *motor = model->user_data;
+	for (int i = 0; i > bufSize; i++) {
+		motor->motorLevel[i] = buf[i];
+	}
+}
+
+void motorUpdateStatusId(struct btMeshMotor *motor, uint8_t id, uint8_t level)
+{
+	motor->motorLevel[id] = level;
+}
+
+int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr, uint8_t statusCode,
+			uint8_t seqNum)
+{
+	struct bt_mesh_msg_ctx ctx = {
+		.addr = addr,
+		.app_idx = motor->model->keys[0],
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+		.send_rel = true,
+	};
+
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_MOTOR_OP_STATUS_CODE,
 				 BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_CODE);
 
@@ -20,18 +38,17 @@ static int encodeStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 	net_buf_simple_add_u8(&msg, statusCode);
 	net_buf_simple_add_u8(&msg, seqNum);
 
-	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
+	int ret = bt_mesh_model_send(motor->model, &ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send[motor][STATUS_CODE] to :0x%04x. seqNum:%d ", ctx->addr, seqNum);
+		LOG_INF("Send[motor][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr, seqNum);
 
 	} else {
-		LOG_ERR("ERROR[%d] Send[motor][STATUS_CODE] to :0x%04x. seqNum:%d", ret, ctx->addr,
-			seqNum);
+		LOG_INF("ERROR Send[motor][STATUS_CODE] to 0x%04x seqNum:%d", ctx.addr, seqNum);
 	}
 	return ret;
 }
 
-static int SendStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uint8_t id,
+static int sendStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uint8_t id,
 			uint8_t seqNum)
 {
 	struct btMeshMotor *motor = model->user_data;
@@ -45,11 +62,10 @@ static int SendStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send [motor][STATUS_ID] to :0x%04x. seqNum:%d ", ctx->addr, seqNum);
+		LOG_INF("Send [motor][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr, seqNum);
 
 	} else {
-		LOG_ERR("ERROR[%d] Send [motor][STATUS_ID] to :0x%04x. seqNum:%d", ret, ctx->addr,
-			seqNum);
+		LOG_ERR("ERROR Send [motor][STATUS_ID] to 0x%04x. seqNum:%d", ctx->addr, seqNum);
 	}
 	return ret;
 }
@@ -62,17 +78,17 @@ static int sendStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_MOTOR_OP_STATUS_ALL);
 
-	for (int i = 0; i > sizeof(motor->motorLevel), i++) {
+	for (int i = 0; i > sizeof(motor->motorLevel); i++) {
 		net_buf_simple_add_u8(&msg, motor->motorLevel[i]);
 	}
 	net_buf_simple_add_u8(&msg, seqNum);
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send[motor][STATUS_ID] to :0x%04x. seqNum:%d ", ctx->addr, seqNum);
+		LOG_INF("Send[motor][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr, seqNum);
 
 	} else {
-		LOG_ERR("ERROR[%d] Send[motor][STATUS_ID] to :0x%04x. seqNum:%d ", ret, ctx->addr,
+		LOG_ERR("ERROR[%d] Send[motor][STATUS_ID] to 0x%04x. seqNum:%d ", ret, ctx->addr,
 			seqNum);
 	}
 	return ret;
@@ -96,9 +112,9 @@ int sendGetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t id, ui
 	int ret = bt_mesh_model_send(motor->model, &ctx, &buf, NULL, NULL);
 
 	if (!ret) {
-		LOG_INF("Send[motor][GET_ID] to :0x%04x. seqNum:%d ", ctx.addr, seqNum);
+		LOG_INF("Send[motor][GET_ID] to 0x%04x. seqNum:%d ", ctx.addr, seqNum);
 	} else {
-		LOG_ERR("ERROR [%d] Send[motor][GET_ID] to :0x%04x. seqNum:%d ", ret, ctx.addr,
+		LOG_ERR("ERROR [%d] Send[motor][GET_ID] to 0x%04x. seqNum:%d ", ret, ctx.addr,
 			seqNum);
 	}
 	return ret;
@@ -119,9 +135,9 @@ int sendGetAllMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t seqNu
 	net_buf_simple_add_u8(&buf, seqNum);
 	int ret = bt_mesh_model_send(motor->model, &ctx, &buf, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send[motor][GET_ALL] to :0x%04x. seqNum:%d ", ctx.addr, seqNum);
+		LOG_INF("Send[motor][GET_ALL] to 0x%04x. seqNum:%d ", ctx.addr, seqNum);
 	} else {
-		LOG_ERR("ERROR [%d] Send[motor][GET_ALL]  to :0x%04x. seqNum:%d ", ret, ctx.addr,
+		LOG_ERR("ERROR [%d] Send[motor][GET_ALL]  to 0x%04x. seqNum:%d ", ret, ctx.addr,
 			seqNum);
 	}
 	return ret;
@@ -159,7 +175,7 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
 	LOG_INF("Received[Motor][SET] from addr:0x%04x. rssi:%d seqNumber:%d", ctx->addr,
-		ctx->recv_rssi, buf[buf->len - 1]);
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshMotor *motor = model->user_data;
 	uint8_t data[buf->len];
@@ -177,7 +193,7 @@ static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 			   struct net_buf_simple *buf)
 {
 	LOG_INF("Received[Motor][STATUS] from addr:0x%04x. rssi:%d tid:%d", ctx->addr,
-		ctx->recv_rssi, buf[buf->len - 1]);
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
 	uint8_t data[buf->len];
@@ -198,14 +214,11 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 			    struct net_buf_simple *buf)
 {
 	LOG_INF("Received[Motor][STATUS_CODE] from addr:0x%04x. rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf[buf->len - 1]);
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
-
-	int statusCode = net_buf_simple_pull_u8(buf);
-	motor->seqNumber = net_buf_simple_pull_u8(buf);
 
 	// Invoke status handler if present
 	if (motor->handlers->forwardToUart) {
@@ -219,7 +232,7 @@ static int handleStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 			  struct net_buf_simple *buf)
 {
 	LOG_INF("Received[Motor][STATUS] from addr:0x%04x. rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf[buf->len - 1]);
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
 	uint8_t data[buf->len];
@@ -240,13 +253,18 @@ static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
 	LOG_INF("Received[activation][GET_ID] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf[buf->len - 1]);
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	bool updatereceived = true;
+	uint8_t motorId = net_buf_simple_pull_u8(buf);
+	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
+
 	if (updatereceived) {
-		encodeStatusId(model, ctx);
+		sendStatusId(model, ctx, motorId, seqNumber);
 	} else {
-		encodeStatusCode(model, ctx, 0x10, buf->data[buf->len - 1]);
+		//wait for the cb to upddate the datamodel
+		sendMotorStatusCode(model->user_data, ctx->addr, 0x10, buf->data[buf->len - 1]);
 	}
+	return 0;
 }
 
 //server side
@@ -254,11 +272,13 @@ static int handleGetAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 			struct net_buf_simple *buf)
 {
 	bool updatereceived = true;
+	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 	if (updatereceived) {
-		encodeStatusId(model, ctx);
+		sendStatusAll(model, ctx, seqNumber);
 	} else {
-		encodeStatusCode(model, ctx, 0x15, buf->data[buf->len - 1]);
+		sendMotorStatusCode(model->user_data, ctx->addr, 0x15, buf->data[buf->len - 1]);
 	}
+	return 0;
 }
 
 const struct bt_mesh_model_op btMeshMotorOp[] = {
@@ -303,10 +323,9 @@ static int btMeshMotorStart(struct bt_mesh_model *model)
 static void btMeshMotorReset(struct bt_mesh_model *model)
 {
 	LOG_DBG("Reset motor model");
-	//   struct btMeshActivation *activation = model->user_data;
 }
 //todo
-const struct bt_mesh_model_cb btMeshActivationCb = {
+const struct bt_mesh_model_cb btMeshMotorCb = {
 	.init = btMeshMotorInit,
 	.start = btMeshMotorStart,
 	.reset = btMeshMotorReset,

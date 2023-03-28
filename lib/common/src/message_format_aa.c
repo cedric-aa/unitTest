@@ -25,7 +25,7 @@ processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQue
 	return processedMessage;
 }
 
-dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
+dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
 					uint8_t uartAck)
 {
 	dataQueueItemType uartTxQueueItem;
@@ -40,12 +40,3 @@ dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint
 	return uartTxQueueItem;
 }
 
-dataQueueItemType headerCbFormatUartTx(uint8_t messageType, uint8_t messageID)
-{
-	dataQueueItemType uartTxQueueItem;
-	uartTxQueueItem.length = 3;
-	uartTxQueueItem.bufferItem[0] = 2; // payload length
-	uartTxQueueItem.bufferItem[1] = messageType;
-	uartTxQueueItem.bufferItem[2] = messageID;
-	return uartTxQueueItem;
-}

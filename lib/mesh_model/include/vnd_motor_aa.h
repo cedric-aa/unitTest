@@ -48,7 +48,7 @@ struct btMeshMotor;
 /** Bluetooth Mesh  model handlers. */
 struct btMeshMotorHandlers {
 	int (*const forwardToUart)(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx,
-				   uint8_t messageId, uint8_t *buf, uint8_t len)
+				   uint8_t messageId, uint8_t *buf, uint8_t len);
 };
 
 /**
@@ -72,6 +72,10 @@ int sendGetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t id, ui
 int sendSetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t lvl, uint8_t id,
 			uint8_t seqNum);
 int sendGetAllMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t seqNum);
+void motorUpdateStatus(struct btMeshMotor *motor, uint8_t *buf, size_t bufSize);
+void motorUpdateStatusId(struct btMeshMotor *motor, uint8_t id, uint8_t level);
+int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr,
+			uint8_t statusCode, uint8_t seqNum);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshMotorOp[];

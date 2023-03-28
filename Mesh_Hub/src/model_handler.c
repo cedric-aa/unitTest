@@ -1,9 +1,3 @@
-/*
- * Copyright (c) 2020 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
@@ -95,13 +89,20 @@ void publisherThread(void)
 
 				if (processedMessage.messageID == SET) {
 					err = sendSetIdMotorLevel(
-						motor, processedMessage.address,
-						processedMessage.payloadBuffer[0],
-						processedMessage.payloadBuffer[1],
-						processedMessage.payloadBuffer[2]);
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0], //id
+						processedMessage.payloadBuffer[1], //level
+						processedMessage.payloadBuffer[2]); //seqNum
 
+				} else if (processedMessage.messageID == GET_ID) {
+					err = sendGetIdMotorLevel(
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0],
+						processedMessage.payloadBuffer[1]);
 				} else if (processedMessage.messageID == GET) {
-					err = sendGetLvl(btMeshlevelMotorCli);
+					err = sendGetAllMotorLevel(
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 
 				break;

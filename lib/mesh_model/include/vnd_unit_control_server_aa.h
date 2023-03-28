@@ -10,7 +10,7 @@
 #include "vnd_unit_control_aa.h"
 
 struct btMeshUnitControlHandlers {
-	void (*const fullCmdSet)(uint8_t *buff, uint8_t len);
+	void (*const fullCmdSet)(uint16_t addr, uint8_t *buff, uint8_t len);
 };
 
 void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint8_t result);

@@ -48,7 +48,7 @@ enum unitControlMode {
 	UNIT_CONTROL_MODE_AUTO = 5
 };
 
-/** Bluetooth Mesh unitControl OnOff values. */
+/** Bluetooth Mesh unitControl fan speed values. */
 enum unitControlFanSpeed {
 	UNIT_CONTROL_FAN_SPEEP_1 = 1,
 	UNIT_CONTROL_FAN_SPEEP_2 = 2,
