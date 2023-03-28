@@ -21,7 +21,7 @@ struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
-static struct btMeshMotor motor = {
+struct btMeshMotor motor = {
 	.handlers = &motorHandlers,
 };
 static struct btMeshActivation activation = {
@@ -59,8 +59,9 @@ void publisherThread(void)
 						processedMessage.payloadLength,
 						processedMessage.address);
 				} else if (processedMessage.messageID == GET) {
-					err = sendUnitControlFullCmdGet(&unitControl,
-									processedMessage.address);
+					err = sendUnitControlFullCmdGet(
+						&unitControl, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 				break;
 			case ACTIVATION_TYPE:

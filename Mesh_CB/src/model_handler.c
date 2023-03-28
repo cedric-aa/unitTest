@@ -24,7 +24,7 @@ static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
 };
 
-static struct btMeshMotor motor = {
+struct btMeshMotor motor = {
 	.handlers = &motorHandlers,
 };
 
@@ -36,7 +36,7 @@ struct settingsControlState *const ctl = &settingsCtlState;
 void publisherThread(void)
 {
 	dataQueueItemType publisherQueueItem;
-	int err;
+	//int err;
 
 	while (1) {
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
@@ -52,7 +52,7 @@ void publisherThread(void)
 			if (processedMessage.messageType == STATUS_CODE) {
 				LOG_INF("received uart [UNIT_CONTROL_TYPE][STATUS_CODE] message from the Cb");
 				//TODO make sure that we ware sending the statusCode
-				sendUnitControlStatusCode(&unitControl, 1);
+				sendUnitControlStatusCode(&unitControl, 0x0196, 0x05, 0);
 
 			} else if (processedMessage.messageID == STATUS) {
 				LOG_INF("received uart[UNIT_CONTROL_TYPE][STATUS] message from the Cb");
@@ -87,6 +87,11 @@ void publisherThread(void)
 
 		default:
 			break;
+		}
+		if (processedMessage.isUartAck) {
+			// send throug uart the response
+			// err code
+			// push it to the queue handled by the uart thread
 		}
 	}
 }

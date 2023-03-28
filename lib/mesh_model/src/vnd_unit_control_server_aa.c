@@ -9,30 +9,46 @@
 
 LOG_MODULE_REGISTER(vnd_unit_control_server_aa, LOG_LEVEL_DBG);
 
-static void expiryupdateTimer(struct k_timer *timer_id)
+static void sendUnitControlGetToCbUart()
 {
-	LOG_DBG("expiryupdateTimer");
-	sendToCbUartStatus();
+	static uint8_t seqNumber;
+	LOG_INF("send [UART][UNIT_CONTROL_TYPE][GET] seqNumber %d",seqNumber);
+	dataQueueItemType uartTxQueueItem =
+		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+}
+
+static void expiryUpdateTimer(struct k_timer *timer_id)
+{
+	LOG_DBG("Unit Control expiryupdateTimer");
+	sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
 		LOG_ERR("timer_id->status > 5 send Message Alert");
 		//send alert to the hub
-		sendUnitControlStatusCode(&unitControl, 5);
-		//k_timer_stop(&updateTimer);
+		//send to a groupAdress
+		sendUnitControlStatusCode(&unitControl, 0x0198, 0x03, 0);
+		k_timer_stop(&updateTimer);
 	}
 }
 
-static void expirysetAckTimer(struct k_timer *timer_id)
+static void expirySetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("//setAcktimeout");
 	//setAcktimeout
-	sendUnitControlStatusCode(&unitControl, 1);
+	//find the sequence number
+	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
+	LOG_INF(" test datasaved must be 13 = [%d]", *seq);
+	sendUnitControlStatusCode(&unitControl, 0x0196, 0x01, *seq);
 }
 
-K_TIMER_DEFINE(updateTimer, expiryupdateTimer, NULL);
-K_TIMER_DEFINE(setAckTimer, expirysetAckTimer, NULL);
+K_TIMER_DEFINE(updateTimer, expiryUpdateTimer, NULL);
+K_TIMER_DEFINE(setAckTimer, expirySetAckTimer, NULL);
 
 static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
-			  struct btMeshUnitControl *unitControl)
+			  struct btMeshUnitControl *unitControl, uint8_t seqNumber)
 {
 	// Initialize the buffer with the given opcode.
 	bt_mesh_model_msg_init(buf, opcode);
@@ -46,12 +62,14 @@ static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
 	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.val1);
 	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.val2);
 	net_buf_simple_add_u8(buf, unitControl->unitControlType);
+	net_buf_simple_add_u8(buf, seqNumber);
 }
 
-void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint8_t statusCode)
+void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t addr,
+			       uint8_t statusCode, uint8_t seqNumber)
 {
 	struct bt_mesh_msg_ctx ctx = {
-		.addr = 0xC001, //group address
+		.addr = addr, //group address
 		.app_idx = unitControl->model->keys[0],
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 		.send_rel = true,
@@ -60,37 +78,41 @@ void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint8_t st
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET_ACK,
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET_ACK);
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE_SET_ACK);
-
 	net_buf_simple_add_u8(&msg, statusCode);
+	net_buf_simple_add_u8(&msg, seqNumber);
 
 	int ret = bt_mesh_model_send(unitControl->model, &ctx, &msg, NULL, NULL);
 	if (ret != 0) {
 		LOG_ERR("ERROR [%d] send [STATUS_CODE] [%d]", ret, statusCode);
 	} else {
 		k_timer_stop(&setAckTimer);
-		LOG_INF("Send [unitControl][STATUS_CODE][%d] to :0x%04x. tid:-- ", statusCode,
-			ctx.addr);
+		LOG_INF("Send [unitControl][STATUS_CODE][%d] to 0x%04x. sequenceNumber:%d ",
+			statusCode, ctx.addr, seqNumber);
 	}
 }
 
 static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	LOG_INF("Received Mesh [unitControl][GET] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
-		ctx->addr, ctx->recv_dst, ctx->recv_rssi);
+	LOG_INF("Received [unitControl][GET] from 0x%04x rssi:%d sequenceNumber:%d", ctx->addr,
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshUnitControl *unitControl = model->user_data;
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE,
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE);
 
+	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
+
 	bool statusReceived = true;
 
 	if (statusReceived) {
-		encodeFullCmd(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, unitControl);
-		LOG_INF("Send [unitControl][STATUS] op[0x%06x] from addr:0x%04x. revc_addr:0x%04x. tid:-- ",
-			BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, ctx->recv_dst, ctx->addr);
+		LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
+			seqNumber);
+		encodeFullCmd(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, unitControl,
+			      seqNumber);
 		(void)bt_mesh_model_send(unitControl->model, ctx, &msg, NULL, NULL);
+
 	} else {
-		sendUnitControlStatusCode(unitControl, 5);
+		sendUnitControlStatusCode(unitControl, ctx->addr, 0x04, seqNumber);
 	}
 
 	return 0;
@@ -99,14 +121,13 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 static int handleFullCmdSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	LOG_INF("Received [unitControl][SET] from addr:0x%04x. revc_addr:0x%04x. rssi:%d tid:-- ",
-		ctx->addr, ctx->recv_dst, ctx->recv_rssi);
-
+	LOG_INF("Received [unitControl][SET] from 0x%04x rssi:%d sequenceNumber:%d", ctx->addr,
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshUnitControl *unitControl = model->user_data;
 	uint8_t buff[buf->len];
 	memcpy(buff, buf->data, buf->len);
 	if (unitControl->handlers->fullCmdSet) {
-		unitControl->handlers->fullCmdSet(ctx->addr,buff, sizeof(buff));
+		unitControl->handlers->fullCmdSet(ctx->addr, buff, sizeof(buff));
 	}
 
 	return 0;
@@ -125,7 +146,7 @@ const struct bt_mesh_model_op btMeshUnitControlOp[] = {
 static int btMeshUnitControlUpdateHandler(struct bt_mesh_model *model)
 {
 	LOG_DBG("UpdateHandler");
-	sendToCbUartStatus();
+	sendUnitControlGetToCbUart();
 	return 0;
 }
 
@@ -147,6 +168,7 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 	unitControl->tempValues.targetTemp.val1 = 1;
 	unitControl->tempValues.targetTemp.val2 = 1;
 	unitControl->unitControlType = 1;
+
 	return 0;
 }
 
@@ -175,6 +197,10 @@ static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	int ret = k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	if (!ret) {
+		//	uint8_t sequenceNumber = buff[len-1];
+		static uint8_t sequenceNumber = 13;
+
+		k_timer_user_data_set(&setAckTimer, &sequenceNumber);
 		k_timer_start(&setAckTimer, K_SECONDS(10), K_FOREVER);
 	}
 }
@@ -194,12 +220,4 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 	unitControl->tempValues.targetTemp.val2 = buf[8];
 	unitControl->unitControlType = buf[9];
 	printClientStatus(unitControl);
-}
-
-void sendToCbUartStatus()
-{
-	LOG_INF("send uart [UNIT_CONTROL_TYPE][GET] to the Cb");
-	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
-	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
