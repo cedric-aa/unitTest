@@ -171,10 +171,10 @@ void uartTxThread(void)
 				k_msleep(5);
 				LOG_ERR("Error uart TX [%d]", ret);
 			} else {
-			//	LOG_INF("uart TX send Success");
+				//	LOG_INF("uart TX send Success");
 			}
 		} else {
-			LOG_INF("uart TX send Success");
+			//LOG_INF("uart TX send Success");
 		}
 	}
 }

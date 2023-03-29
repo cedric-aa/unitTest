@@ -13,7 +13,7 @@ static void sendToCbUartMotorStatus()
 {
 	static uint8_t seqNumber;
 	LOG_INF("send [UART][MOTOR_TYPR][GET] seqNumber %d", seqNumber);
-	dataQueueItemType uartTxQueueItem = headerFormatUartTx(0x0101, MOTOR_TYPE, GET, true);
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(0x01ab, MOTOR_TYPE, GET, true);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
 
@@ -25,9 +25,10 @@ static void expiryMotorUpdateTimer(struct k_timer *timer_id)
 	sendToCbUartMotorStatus();
 	if (timer_id->status > 5) {
 		LOG_ERR("timer_id->status > 5 send Message Alert");
-		//send alert to the hub
-		//send to a groupAdress
-		sendMotorStatusCode(&motor, 0x0198, 0x03, 0);
+		uint8_t buf[2] = { 0x02, 0x05 };
+		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
+			false, 0x01ab, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
+		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 		k_timer_stop(&motorUpdateTimer);
 	}
 }
@@ -35,11 +36,12 @@ static void expiryMotorUpdateTimer(struct k_timer *timer_id)
 static void expiryMotorSetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("//setAcktimeout");
-	//setAcktimeout
-	//find the sequence number
 	uint8_t *seq = k_timer_user_data_get(&motorSetAckTimer);
-	LOG_INF(" test datasaved must be 13 = [%d]", *seq);
-	sendMotorStatusCode(&motor, 0x0196, 0x01, *seq);
+	uint8_t buf[2] = { 0x05, *seq };
+	dataQueueItemType publisherQueueItem =
+		createPublisherQueueItem(false, 0x01ab, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
+	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
+	k_timer_stop(&motorSetAckTimer);
 }
 
 K_TIMER_DEFINE(motorUpdateTimer, expiryMotorUpdateTimer, NULL);
@@ -60,6 +62,7 @@ void motorUpdateStatusId(struct btMeshMotor *motor, uint8_t id, uint8_t level)
 int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr, uint8_t statusCode,
 			uint8_t seqNum)
 {
+	LOG_INF("yo 1");
 	struct bt_mesh_msg_ctx ctx = {
 		.addr = addr,
 		.app_idx = motor->model->keys[0],
@@ -67,14 +70,16 @@ int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr, uint8_t status
 		.send_rel = true,
 	};
 
+	LOG_INF("yo 2");
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_MOTOR_OP_STATUS_CODE,
 				 BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_CODE);
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_MOTOR_OP_STATUS_CODE);
 	net_buf_simple_add_u8(&msg, statusCode);
 	net_buf_simple_add_u8(&msg, seqNum);
-
+	LOG_INF("yo 2");
 	int ret = bt_mesh_model_send(motor->model, &ctx, &msg, NULL, NULL);
+	LOG_INF("yo ret %d", ret);
 	if (!ret) {
 		LOG_INF("Send [MESH][MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr,
 			seqNum);
@@ -145,9 +150,7 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	struct btMeshMotor *motor = model->user_data;
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
-	//	uint8_t sequenceNumber = buff[len-1];
-	static uint8_t sequenceNumber = 13;
-
+	uint8_t sequenceNumber = buf->data[buf->len - 1];
 	k_timer_user_data_set(&motorSetAckTimer, &sequenceNumber);
 	k_timer_start(&motorSetAckTimer, K_SECONDS(10), K_FOREVER);
 

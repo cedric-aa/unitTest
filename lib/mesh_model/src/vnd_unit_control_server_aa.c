@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(vnd_unit_control_server_aa, LOG_LEVEL_DBG);
 static void sendUnitControlGetToCbUart()
 {
 	static uint8_t seqNumber;
-	LOG_INF("send [UART][UNIT_CONTROL_TYPE][GET] seqNumber %d",seqNumber);
+	LOG_INF("send [UART][UNIT_CONTROL_TYPE][GET] seqNumber %d", seqNumber);
 	dataQueueItemType uartTxQueueItem =
 		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
@@ -25,9 +25,10 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 	sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
 		LOG_ERR("timer_id->status > 5 send Message Alert");
-		//send alert to the hub
-		//send to a groupAdress
-		sendUnitControlStatusCode(&unitControl, 0x0198, 0x03, 0);
+		uint8_t buf[2] = { 0x02, 0x05 };
+		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
+			false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
+		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 		k_timer_stop(&updateTimer);
 	}
 }
@@ -35,11 +36,12 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 static void expirySetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("//setAcktimeout");
-	//setAcktimeout
-	//find the sequence number
 	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
-	LOG_INF(" test datasaved must be 13 = [%d]", *seq);
-	sendUnitControlStatusCode(&unitControl, 0x0196, 0x01, *seq);
+	uint8_t buf[2] = { 0x05, *seq };
+	dataQueueItemType publisherQueueItem = createPublisherQueueItem(
+		false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
+	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
+	k_timer_stop(&setAckTimer);
 }
 
 K_TIMER_DEFINE(updateTimer, expiryUpdateTimer, NULL);
@@ -81,7 +83,7 @@ void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t a
 
 	int ret = bt_mesh_model_send(unitControl->model, &ctx, &msg, NULL, NULL);
 	if (ret != 0) {
-		LOG_ERR("ERROR [%d] send [STATUS_CODE] sequenceNumber:%d", ret,seqNumber);
+		LOG_ERR("ERROR [%d] send [STATUS_CODE] sequenceNumber:%d", ret, seqNumber);
 	} else {
 		k_timer_stop(&setAckTimer);
 		LOG_INF("Send [unitControl][STATUS_CODE][%d] to 0x%04x. sequenceNumber:%d ",
@@ -100,7 +102,7 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 
-	bool statusReceived = true;
+	bool statusReceived = false;
 
 	if (statusReceived) {
 		LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
@@ -195,8 +197,8 @@ static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	int ret = k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	if (!ret) {
-		//	uint8_t sequenceNumber = buff[len-1];
-		static uint8_t sequenceNumber = 13;
+		static uint8_t sequenceNumber;
+		sequenceNumber = buff[len - 1];
 
 		k_timer_user_data_set(&setAckTimer, &sequenceNumber);
 		k_timer_start(&setAckTimer, K_SECONDS(10), K_FOREVER);

@@ -49,10 +49,12 @@ void publisherThread(void)
 		switch (processedMessage.messageType) {
 		case UNIT_CONTROL_TYPE:
 
-			if (processedMessage.messageType == STATUS_CODE) {
+			if (processedMessage.messageID == STATUS_CODE) {
 				LOG_INF("received uart [UNIT_CONTROL_TYPE][STATUS_CODE] message from the Cb");
 				//TODO make sure that we ware sending the statusCode
-				sendUnitControlStatusCode(&unitControl, 0x0196, 0x05, 0);
+				sendUnitControlStatusCode(&unitControl, processedMessage.address,
+							  processedMessage.payloadBuffer[0],
+							  processedMessage.payloadBuffer[1]);
 
 			} else if (processedMessage.messageID == STATUS) {
 				LOG_INF("received uart[UNIT_CONTROL_TYPE][STATUS] message from the Cb");
@@ -66,7 +68,7 @@ void publisherThread(void)
 			break;
 		case MOTOR_TYPE:
 
-			if (processedMessage.messageType == STATUS_CODE) {
+			if (processedMessage.messageID == STATUS_CODE) {
 				LOG_INF("received uart [MOTOR_TYPE][STATUS_CODE] message from the Cb");
 				//TODO make sure that we ware sending the statusCode
 				sendMotorStatusCode(&motor, processedMessage.address,
