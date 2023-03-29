@@ -154,13 +154,13 @@ void uartTxThread(void)
 	while (1) {
 		k_msgq_get(&uartTxQueue, &uartTxQueueItem, K_FOREVER);
 
-		LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
-				"uart Tx Thread Thread");
+		//	LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
+		//		"uart Tx Thread Thread");
 
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
 
-		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer tx");
+		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
 
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
 
@@ -171,7 +171,7 @@ void uartTxThread(void)
 				k_msleep(5);
 				LOG_ERR("Error uart TX [%d]", ret);
 			} else {
-				LOG_INF("uart TX send Success");
+			//	LOG_INF("uart TX send Success");
 			}
 		} else {
 			LOG_INF("uart TX send Success");

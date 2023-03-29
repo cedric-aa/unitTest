@@ -1,6 +1,5 @@
 #include <zephyr/bluetooth/mesh.h>
 #include "vnd_unit_control_server_aa.h"
-
 #include "mesh/net.h"
 #include <string.h>
 #include <zephyr/logging/log.h>
@@ -23,7 +22,6 @@ static void sendUnitControlGetToCbUart()
 
 static void expiryUpdateTimer(struct k_timer *timer_id)
 {
-	LOG_DBG("Unit Control expiryupdateTimer");
 	sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
 		LOG_ERR("timer_id->status > 5 send Message Alert");
@@ -83,7 +81,7 @@ void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t a
 
 	int ret = bt_mesh_model_send(unitControl->model, &ctx, &msg, NULL, NULL);
 	if (ret != 0) {
-		LOG_ERR("ERROR [%d] send [STATUS_CODE] [%d]", ret, statusCode);
+		LOG_ERR("ERROR [%d] send [STATUS_CODE] sequenceNumber:%d", ret,seqNumber);
 	} else {
 		k_timer_stop(&setAckTimer);
 		LOG_INF("Send [unitControl][STATUS_CODE][%d] to 0x%04x. sequenceNumber:%d ",

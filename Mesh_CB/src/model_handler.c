@@ -1,7 +1,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
-#include "vnd_motor_aa.h"
+#include "vnd_motor_server_aa.h"
 #include "model_handler.h"
 #include "model_level_aa.h"
 #include "vnd_unit_control_server_aa.h"

@@ -113,7 +113,7 @@ struct btMeshUnitControl {
 	uint8_t unitControlType;
 };
 
-extern struct btMeshUnitControl unitControl;
+
 
 void printClientStatus(struct btMeshUnitControl *unitControl);
 void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, uint8_t *buff, uint8_t len);

@@ -5,7 +5,7 @@
 #include "model_handler.h"
 #include "model_sensor_cli_aa.h"
 #include "vnd_unit_control_client_aa.h"
-#include "vnd_motor_aa.h"
+#include "vnd_motor_client_aa.h"
 #include "vnd_activation_aa.h"
 #include "uart_aa.h"
 #include "message_format_aa.h"
@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
 static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
-struct btMeshUnitControl unitControl = {
+static struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
