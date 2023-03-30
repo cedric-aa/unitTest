@@ -13,12 +13,12 @@ int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_
 		  uint8_t *buf, uint8_t len)
 {
 	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, MOTOR_TYPE, STATUS, false);
+		headerFormatUartTx(ctx->addr, MOTOR_TYPE, messageId, false);
 
-	for (int i = 0; i > len; i++) {
+	for (int i = 0; i < len; i++) {
 		uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = buf[i];
 	}
-	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 
 	return 0;

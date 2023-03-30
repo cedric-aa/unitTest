@@ -37,6 +37,6 @@ void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, uint8_t *buff, 
 
 {
 	memcpy(&uartTxQueueItem->bufferItem[uartTxQueueItem->length], buff, len);
-	uartTxQueueItem->bufferItem[0] = uartTxQueueItem->bufferItem[0] + len;
+	uartTxQueueItem->bufferItem[0] = uartTxQueueItem->bufferItem[0] + len - 1;
 	uartTxQueueItem->length = uartTxQueueItem->length + len;
 }

@@ -89,14 +89,15 @@ int sendSetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t id, ui
 static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS] from addr:0x%04x. rssi:%d tid:%d", ctx->addr,
-		ctx->recv_rssi, buf->data[buf->len - 1]);
+	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS] from addr:0x%04x. rssi:%d seqNumber:%d",
+		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
+	//LOG_HEXDUMP_INF(msg.data, msg.len, "buf net");
 
-	for (int i = 0; i > sizeof(data); i++) {
+	for (int i = 0; i < sizeof(data); i++) {
 		motor->motorLevel[i] = net_buf_simple_pull_u8(buf);
 	}
 	// Invoke status handler if present
@@ -110,7 +111,7 @@ static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS_CODE] from addr:0x%04x. rssi:%d tid:%d ",
+	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS_CODE] from addr:0x%04x. rssi:%d sequenceNumber:%d ",
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
@@ -128,7 +129,7 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 static int handleStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS_ID] from addr:0x%04x. rssi:%d tid:%d ",
+	LOG_INF("Received [MESH][MOTOR_TYPE][STATUS_ID] from addr:0x%04x. rssi:%d sequenceNumber:%d ",
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 	struct btMeshMotor *motor = model->user_data;
 
@@ -150,8 +151,8 @@ const struct bt_mesh_model_op btMeshMotorOp[] = {
 	  BT_MESH_LEN_EXACT(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_CODE), handleStatusCode },
 	{ BT_MESH_MODEL_MOTOR_OP_STATUS_ID, BT_MESH_LEN_EXACT(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ID),
 	  handleStatusId },
-	{ BT_MESH_MODEL_MOTOR_OP_STATUS_ALL, BT_MESH_LEN_MIN(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ALL),
-	  handleStatusAll },
+	{ BT_MESH_MODEL_MOTOR_OP_STATUS_ALL,
+	  BT_MESH_LEN_EXACT(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ALL), handleStatusAll },
 	BT_MESH_MODEL_OP_END,
 };
 //todo

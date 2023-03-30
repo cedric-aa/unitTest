@@ -22,9 +22,9 @@
 #define BT_MESH_MODEL_ACTIVATION_OP_STATUS BT_MESH_MODEL_OP_3(0x0C, BT_MESH_CB_MODEL_ACTIVATION_ID)
 
 /*OpCode Len*/
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS_GET 0
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_PWD_SET 3
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 5
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS_GET 1
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_PWD_SET 4
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 6
 
 /* Forward declaration of the Bluetooth Mesh Activation model context. */
 struct btMeshActivation;
@@ -49,7 +49,8 @@ struct btMeshActivationHandlers {
      * @param[in] ctx Context of the incoming message.
      * @param[in] pwd of a Activation client published
      */
-	int (*const setPwd)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx);
+	int (*const setPwd)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx,
+			    uint8_t seqNum);
 
 	/** @brief Handler for a Get Status message.
      *
@@ -57,7 +58,8 @@ struct btMeshActivationHandlers {
      * @param[in] ctx Context of the incoming message.
      * @param[in] buf net_buf_simple buffer including the status info
      */
-	int (*const status)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx);
+	int (*const status)(struct btMeshActivation *activation, struct bt_mesh_msg_ctx *ctx,
+			    uint8_t seqNum);
 };
 
 /**
@@ -79,7 +81,7 @@ struct btMeshActivation {
 	uint8_t seqNumber;
 };
 
-int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr);
+int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr, uint8_t seqNum);
 int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t addr, uint8_t *buffer,
 			 size_t len);
 

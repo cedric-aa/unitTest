@@ -8,6 +8,8 @@
 
 LOG_MODULE_REGISTER(vnd_unit_control_server_aa, LOG_LEVEL_DBG);
 
+static bool statusReceived;
+
 static void sendUnitControlGetToCbUart()
 {
 	static uint8_t seqNumber;
@@ -15,7 +17,7 @@ static void sendUnitControlGetToCbUart()
 	dataQueueItemType uartTxQueueItem =
 		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
-	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
 
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
@@ -24,8 +26,9 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 {
 	sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
+		statusReceived = false;
 		LOG_ERR("timer_id->status > 5 send Message Alert");
-		uint8_t buf[2] = { 0x02, 0x05 };
+		uint8_t buf[2] = { 0x03, 0x00 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
 			false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
@@ -37,7 +40,7 @@ static void expirySetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("//setAcktimeout");
 	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
-	uint8_t buf[2] = { 0x05, *seq };
+	uint8_t buf[2] = { 0x01, *seq };
 	dataQueueItemType publisherQueueItem = createPublisherQueueItem(
 		false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
@@ -101,8 +104,6 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE);
 
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-
-	bool statusReceived = false;
 
 	if (statusReceived) {
 		LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
@@ -168,6 +169,7 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 	unitControl->tempValues.targetTemp.val1 = 1;
 	unitControl->tempValues.targetTemp.val2 = 1;
 	unitControl->unitControlType = 1;
+	statusReceived = false;
 
 	return 0;
 }
@@ -211,6 +213,8 @@ const struct btMeshUnitControlHandlers unitControlHandlers = {
 
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize)
 {
+	statusReceived = true;
+
 	unitControl->mode = buf[2];
 	unitControl->onOff = buf[3];
 	unitControl->fanSpeed = buf[4];

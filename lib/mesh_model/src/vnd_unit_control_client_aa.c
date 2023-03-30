@@ -145,7 +145,7 @@ static void unitControlHandleSatusCode(struct btMeshUnitControl *unitControl,
 		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS_CODE, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = statusCode; // status
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = sequenceNumber; // status
-	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length; // update lenghtpayload
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
 	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 }
 

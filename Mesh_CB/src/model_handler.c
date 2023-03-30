@@ -58,6 +58,7 @@ void publisherThread(void)
 
 			} else if (processedMessage.messageID == STATUS) {
 				LOG_INF("received uart[UNIT_CONTROL_TYPE][STATUS] message from the Cb");
+
 				unitControlUpdateStatus(&unitControl,
 							processedMessage.payloadBuffer,
 							processedMessage.payloadLength);
@@ -156,7 +157,7 @@ static const struct bt_mesh_comp comp = {
 
 const struct bt_mesh_comp *model_handler_init(void)
 {
-	k_work_init_delayable(&attention_blink_work, attention_blink);
+		k_work_init_delayable(&attention_blink_work, attention_blink);
 
 	for (int i = 0; i < ARRAY_SIZE(levelMotors); ++i) {
 		k_work_init_delayable(&levelMotors[i].levelMotorDelayWork, levelMotorWork);
