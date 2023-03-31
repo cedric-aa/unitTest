@@ -1,4 +1,6 @@
 #include "message_format_aa.h"
+#include "uart_aa.h"
+#include <zephyr/kernel.h>
 
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem)
 {
@@ -25,8 +27,25 @@ processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQue
 	return processedMessage;
 }
 
-dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
-					uint8_t uartAck)
+dataQueueItemType createPublisherQueueItem(bool uartAck, uint16_t addr, uint8_t messageType,
+					   uint8_t messageId, uint8_t *buf, uint8_t len)
+{
+	dataQueueItemType publisherQueueItem;
+	publisherQueueItem.bufferItem[0] = uartAck;
+
+	publisherQueueItem.bufferItem[1] = (uint8_t)(addr & 0xFF); // low byte of address
+	publisherQueueItem.bufferItem[2] = (uint8_t)((addr >> 8) & 0xFF); // high byte of address;
+
+	publisherQueueItem.bufferItem[3] = messageType;
+	publisherQueueItem.bufferItem[4] = messageId;
+
+	memcpy(&publisherQueueItem.bufferItem[5], buf, len);
+	publisherQueueItem.length = len + 5;
+	return publisherQueueItem;
+}
+
+dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
+				     uint8_t uartAck)
 {
 	dataQueueItemType uartTxQueueItem;
 	uartTxQueueItem.length = 6;
@@ -40,12 +59,16 @@ dataQueueItemType headerHubFormatUartTx(uint16_t addr, uint8_t messageType, uint
 	return uartTxQueueItem;
 }
 
-dataQueueItemType headerCbFormatUartTx(uint8_t messageType, uint8_t messageID)
+int forwardToUart(uint8_t uartAck, uint16_t addr, uint8_t messageType, uint8_t messageId,
+		  uint8_t *buf, uint8_t len)
 {
-	dataQueueItemType uartTxQueueItem;
-	uartTxQueueItem.length = 3;
-	uartTxQueueItem.bufferItem[0] = 2; // payload length
-	uartTxQueueItem.bufferItem[1] = messageType;
-	uartTxQueueItem.bufferItem[2] = messageID;
-	return uartTxQueueItem;
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(addr, messageType, messageId, false);
+
+	for (int i = 0; i < len; i++) {
+		uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = buf[i];
+	}
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+
+	return 0;
 }

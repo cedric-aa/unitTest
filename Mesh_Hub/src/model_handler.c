@@ -1,17 +1,11 @@
-/*
- * Copyright (c) 2020 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
-
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
 #include <dk_buttons_and_leds.h>
 #include <zephyr/logging/log.h>
 #include "model_handler.h"
 #include "model_sensor_cli_aa.h"
-#include "model_level_cli_aa.h"
 #include "vnd_unit_control_client_aa.h"
+#include "vnd_motor_client_aa.h"
 #include "vnd_activation_aa.h"
 #include "uart_aa.h"
 #include "message_format_aa.h"
@@ -21,14 +15,15 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 #define THREAD_PUBLISHER_STACKSIZE 2048
 #define THREAD_PUBLISHER_PRIORITY 14
 
-static struct bt_mesh_lvl_cli btMeshlevelMotorCli = BT_MESH_LVL_CLI_INIT(&levelMotorStatusHandler);
-
 static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
-struct btMeshUnitControl unitControl = {
+static struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
 
+struct btMeshMotor motor = {
+	.handlers = &motorHandlers,
+};
 static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
 };
@@ -64,8 +59,9 @@ void publisherThread(void)
 						processedMessage.payloadLength,
 						processedMessage.address);
 				} else if (processedMessage.messageID == GET) {
-					err = sendUnitControlFullCmdGet(&unitControl,
-									processedMessage.address);
+					err = sendUnitControlFullCmdGet(
+						&unitControl, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 				break;
 			case ACTIVATION_TYPE:
@@ -76,8 +72,9 @@ void publisherThread(void)
 								   processedMessage.payloadBuffer,
 								   processedMessage.payloadLength);
 				} else if (processedMessage.messageID == GET) {
-					err = sendActivationGetStatus(&activation,
-								      processedMessage.address);
+					err = sendActivationGetStatus(
+						&activation, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 
 				break;
@@ -90,13 +87,24 @@ void publisherThread(void)
 				}
 
 				break;
-			case MOTOR_LEVEL:
+			case MOTOR_TYPE:
 
 				if (processedMessage.messageID == SET) {
-					////make generic model as custom
-					err = sendSetLvl(btMeshlevelMotorCli);
+					err = sendSetIdMotorLevel(
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0], //id
+						processedMessage.payloadBuffer[1], //level
+						processedMessage.payloadBuffer[2]); //seqNum
+
+				} else if (processedMessage.messageID == GET_ID) {
+					err = sendGetIdMotorLevel(
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0],
+						processedMessage.payloadBuffer[1]);
 				} else if (processedMessage.messageID == GET) {
-					err = sendGetLvl(btMeshlevelMotorCli);
+					err = sendGetAllMotorLevel(
+						&motor, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 
 				break;
@@ -189,10 +197,9 @@ static struct bt_mesh_elem elements[] = {
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 					BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
-					BT_MESH_MODEL_ACTIVATION(&activation))),
-	BT_MESH_ELEM(2,
-		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_LVL_CLI(&btMeshlevelMotorCli),
-					BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
+					BT_MESH_MODEL_ACTIVATION(&activation),
+					BT_MESH_MODEL_MOTOR(&motor))),
+	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
 		     BT_MESH_MODEL_NONE)
 };
 

@@ -10,12 +10,13 @@
 #include "vnd_unit_control_aa.h"
 
 struct btMeshUnitControlHandlers {
-	void (*const fullCmdSet)(uint8_t *buff, uint8_t len);
+	void (*const fullCmdSet)(uint16_t addr, uint8_t *buff, uint8_t len);
 };
 
-void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint8_t result);
+void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t addr,
+			       uint8_t statusCode, uint8_t seqNumber);
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize);
-void sendToCbUartStatus();
+//void sendToCbUartStatus();
 
 extern struct btMeshUnitControl unitControl;
 

@@ -14,9 +14,10 @@ set(LIB_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../lib)
 target_sources(app PRIVATE
 	src/main.c
 	src/model_handler.c
-	src/model_level_cli_aa.c
 	src/model_sensor_cli_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_unit_control_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_motor_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_motor_client_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_unit_control_client_aa.c
 	${LIB_ROOT}/mesh_model/src/storage_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_activation_aa.c

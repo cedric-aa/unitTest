@@ -27,10 +27,17 @@
 	BT_MESH_MODEL_OP_3(0x0D, BT_MESH_CB_MODEL_UNIT_CONTROL_ID)
 
 /**length message**/
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE 8
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET 8
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET_ACK 1
-#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_GET 0
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE 9
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET 9
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_SET_ACK 2
+#define BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE_GET 1
+
+enum unitControlCodeStatus {
+	UNIT_CONTROL_CODE_STATUS_SUCCESS,
+	UNIT_CONTROL_CODE_STATUS_FAIL,
+	UNIT_CONTROL_CODE_STATUS_LOCK,
+	UNIT_CONTROL_CODE_STATUS_TIMEOUT
+};
 
 /** Bluetooth Mesh unitControl mode values. */
 enum unitControlMode {
@@ -41,14 +48,7 @@ enum unitControlMode {
 	UNIT_CONTROL_MODE_AUTO = 5
 };
 
-enum unitControlCodeStatus {
-	UNIT_CONTROL_CODE_STATUS_SUCCESS,
-	UNIT_CONTROL_CODE_STATUS_FAIL,
-	UNIT_CONTROL_CODE_STATUS_LOCK,
-	UNIT_CONTROL_CODE_STATUS_TIMEOUT
-};
-
-/** Bluetooth Mesh unitControl OnOff values. */
+/** Bluetooth Mesh unitControl fan speed values. */
 enum unitControlFanSpeed {
 	UNIT_CONTROL_FAN_SPEEP_1 = 1,
 	UNIT_CONTROL_FAN_SPEEP_2 = 2,
@@ -112,8 +112,6 @@ struct btMeshUnitControl {
 	/**Unit control Type*/
 	uint8_t unitControlType;
 };
-
-extern struct btMeshUnitControl unitControl;
 
 void printClientStatus(struct btMeshUnitControl *unitControl);
 void formatUartEncodeFullCmd(dataQueueItemType *uartTxQueueItem, uint8_t *buff, uint8_t len);
