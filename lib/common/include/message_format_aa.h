@@ -31,8 +31,10 @@ typedef struct {
 } dataQueueItemType;
 
 dataQueueItemType createPublisherQueueItem(bool uartAck, uint16_t addr, uint8_t messageType,
-					 uint8_t messageId, uint8_t *buf, uint8_t len);
+					   uint8_t messageId, uint8_t *buf, uint8_t len);
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem);
 dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t messageID,
 				     uint8_t uartAck);
+int forwardToUart(uint8_t uartAck, uint16_t addr, uint8_t messageType, uint8_t messageId,
+		  uint8_t *buf, uint8_t len);
 #endif

@@ -66,6 +66,21 @@ void publisherThread(void)
 
 			break;
 		case ACTIVATION_TYPE:
+
+			if (processedMessage.messageID == STATUS_CODE) {
+				LOG_INF("received uart [ACTIVATION_TYPE][STATUS_CODE] message from the Cb");
+				//TODO make sure that we ware sending the statusCode
+				sendActivationStatusCode(&activation, processedMessage.address,
+							 processedMessage.payloadBuffer[0],
+							 processedMessage.payloadBuffer[1]);
+
+			} else if (processedMessage.messageID == STATUS) {
+				LOG_INF("received uart[ACTIVATION_TYPE][STATUS] message from the Cb");
+
+				activationUpdateStatus(&activation, processedMessage.payloadBuffer,
+						       processedMessage.payloadLength);
+			}
+
 			break;
 		case MOTOR_TYPE:
 
@@ -157,7 +172,7 @@ static const struct bt_mesh_comp comp = {
 
 const struct bt_mesh_comp *model_handler_init(void)
 {
-		k_work_init_delayable(&attention_blink_work, attention_blink);
+	k_work_init_delayable(&attention_blink_work, attention_blink);
 
 	for (int i = 0; i < ARRAY_SIZE(levelMotors); ++i) {
 		k_work_init_delayable(&levelMotors[i].levelMotorDelayWork, levelMotorWork);

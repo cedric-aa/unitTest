@@ -72,8 +72,9 @@ void publisherThread(void)
 								   processedMessage.payloadBuffer,
 								   processedMessage.payloadLength);
 				} else if (processedMessage.messageID == GET) {
-					err = sendActivationGetStatus(&activation,
-								      processedMessage.address);
+					err = sendActivationGetStatus(
+						&activation, processedMessage.address,
+						processedMessage.payloadBuffer[0]);
 				}
 
 				break;

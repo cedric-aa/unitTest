@@ -1,4 +1,6 @@
 #include "message_format_aa.h"
+#include "uart_aa.h"
+#include <zephyr/kernel.h>
 
 processedMessage processPublisherQueueItem(const dataQueueItemType *publisherQueueItem)
 {
@@ -55,4 +57,18 @@ dataQueueItemType headerFormatUartTx(uint16_t addr, uint8_t messageType, uint8_t
 	uartTxQueueItem.bufferItem[5] = messageID; // message ID
 
 	return uartTxQueueItem;
+}
+
+int forwardToUart(uint8_t uartAck, uint16_t addr, uint8_t messageType, uint8_t messageId,
+		  uint8_t *buf, uint8_t len)
+{
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(addr, messageType, messageId, false);
+
+	for (int i = 0; i < len; i++) {
+		uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = buf[i];
+	}
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+
+	return 0;
 }

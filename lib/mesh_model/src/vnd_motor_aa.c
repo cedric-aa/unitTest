@@ -9,6 +9,7 @@
 
 LOG_MODULE_REGISTER(vnd_motor, LOG_LEVEL_INF);
 
+/*
 int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_t messageId,
 		  uint8_t *buf, uint8_t len)
 {
@@ -23,3 +24,4 @@ int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_
 
 	return 0;
 }
+*/

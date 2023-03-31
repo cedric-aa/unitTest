@@ -47,7 +47,7 @@ struct btMeshMotor;
 
 /** Bluetooth Mesh  model handlers. */
 struct btMeshMotorHandlers {
-	int (*const forwardToUart)(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx,
+	int (*const forwardToUart)(uint8_t uartAck, uint16_t addr, uint8_t messageType,
 				   uint8_t messageId, uint8_t *buf, uint8_t len);
 };
 
@@ -68,8 +68,8 @@ struct btMeshMotor {
 	uint8_t seqNumber;
 };
 
-int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_t messageId,
-		  uint8_t *buf, uint8_t len);
+//int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_t messageId,
+//		  uint8_t *buf, uint8_t len);
 
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshMotorOp[];

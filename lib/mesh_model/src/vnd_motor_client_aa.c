@@ -102,7 +102,8 @@ static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	}
 	// Invoke status handler if present
 	if (motor->handlers->forwardToUart) {
-		motor->handlers->forwardToUart(motor, ctx, STATUS, data, sizeof(data));
+		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS, data,
+					       sizeof(data));
 	}
 	return 0;
 }
@@ -120,7 +121,8 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 
 	// Invoke status handler if present
 	if (motor->handlers->forwardToUart) {
-		motor->handlers->forwardToUart(motor, ctx, STATUS_CODE, data, sizeof(data));
+		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS_CODE, data,
+					       sizeof(data));
 	}
 	return 0;
 }
@@ -141,7 +143,8 @@ static int handleStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 	motor->seqNumber = net_buf_simple_pull_u8(buf);
 	// Invoke status handler if present
 	if (motor->handlers->forwardToUart) {
-		motor->handlers->forwardToUart(motor, ctx, STATUS_ID, data, sizeof(data));
+		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS_ID, data,
+					       sizeof(data));
 	}
 	return 0;
 }

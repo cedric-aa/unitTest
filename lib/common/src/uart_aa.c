@@ -25,7 +25,6 @@ static uint8_t doubleBuffer[2][BUF_SIZE];
 static uint8_t *nextBuf = doubleBuffer[1];
 static uint8_t txBuffer[50]; // defined as static for asynchronous tx purpose
 
-K_SEM_DEFINE(tx_done, 0, 1);
 K_MSGQ_DEFINE(uartTxQueue, sizeof(dataQueueItemType), 10, 4);
 K_MSGQ_DEFINE(uartMsgq, sizeof(dataQueueItemType), 10, 4);
 K_MSGQ_DEFINE(publisherQueue, sizeof(dataQueueItemType), 10, 4);

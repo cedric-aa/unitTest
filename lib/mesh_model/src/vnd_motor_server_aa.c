@@ -153,7 +153,8 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	k_timer_start(&motorSetAckTimer, K_SECONDS(10), K_FOREVER);
 
 	if (motor->handlers->forwardToUart) {
-		motor->handlers->forwardToUart(motor, ctx, SET, data, sizeof(data));
+		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, SET, data,
+					       sizeof(data));
 	}
 
 	return 0;
