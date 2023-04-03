@@ -8,27 +8,22 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <bluetooth/mesh/models.h>
-#include "vnd_sensor_aa.h"
+#include "vnd_sensor_server_aa.h"
 #include <dk_buttons_and_leds.h>
 #include "model_handler.h"
 
-//LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
-
-/*
-static struct bt_mesh_sensor_srv sensor_srv = {
-	.sensor_array = sensors,
-	.sensor_count = ARRAY_SIZE(sensors),
-	.pub.period = BT_MESH_PUB_PERIOD_SEC(20),
-	.pub.addr = 0xc000,
-};
-*/
+static struct k_work_delayable updateSensorWork;
 
 static struct btMeshSensor sensor = {
 	.handlers = &sensorHandlers,
-	.pub.period = BT_MESH_PUB_PERIOD_SEC(20),
 	.pub.addr = 0xc000,
-
 };
+
+static void updateWork(struct k_work *work)
+{
+	updateTemp(&sensor);
+	k_work_reschedule(&updateSensorWork, K_MSEC(5000));
+}
 
 static void button_handler_cb(uint32_t pressed, uint32_t changed)
 {
@@ -37,6 +32,8 @@ static void button_handler_cb(uint32_t pressed, uint32_t changed)
 	}
 
 	if (pressed & BIT(0)) {
+		printk("Button display sensor");
+		updateTemp(&sensor);
 	}
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && (pressed & BIT(3))) {
 		printk("Button LPN");
@@ -53,6 +50,7 @@ static struct button_handler button_handler = {
  * requested.
  */
 static struct k_work_delayable attention_blink_work;
+
 static bool attention;
 
 static void attention_blink(struct k_work *work)
@@ -121,7 +119,8 @@ static const struct bt_mesh_comp comp = {
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
-
+	k_work_init_delayable(&updateSensorWork, updateWork);
+	k_work_schedule(&updateSensorWork, K_MSEC(5000));
 	dk_button_handler_add(&button_handler);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {

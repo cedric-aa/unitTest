@@ -3,10 +3,10 @@
 #include <dk_buttons_and_leds.h>
 #include <zephyr/logging/log.h>
 #include "model_handler.h"
-#include "model_sensor_cli_aa.h"
 #include "vnd_unit_control_client_aa.h"
 #include "vnd_motor_client_aa.h"
 #include "vnd_activation_aa.h"
+#include "vnd_sensor_client_aa.h"
 #include "uart_aa.h"
 #include "message_format_aa.h"
 
@@ -14,8 +14,6 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 
 #define THREAD_PUBLISHER_STACKSIZE 2048
 #define THREAD_PUBLISHER_PRIORITY 14
-
-static struct bt_mesh_sensor_cli btMeshsensorCli = BT_MESH_SENSOR_CLI_INIT(&sensorCliHandlers);
 
 static struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
@@ -27,6 +25,10 @@ struct btMeshMotor motor = {
 
 static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
+};
+
+static struct btMeshSensor sensor = {
+	.handlers = &sensorHandlers,
 };
 
 struct SettingsControlState settingsCtlState = {
@@ -82,9 +84,6 @@ void publisherThread(void)
 			case SENSOR_TYPE:
 
 				if (processedMessage.messageID == GET) {
-					err = bt_mesh_sensor_cli_get(
-						&btMeshsensorCli, NULL,
-						&bt_mesh_sensor_present_dev_op_temp, NULL);
 				}
 
 				break;
@@ -199,9 +198,8 @@ static struct bt_mesh_elem elements[] = {
 					BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub)),
 		     BT_MESH_MODEL_LIST(BT_MESH_MODEL_UNIT_CONTROL(&unitControl),
 					BT_MESH_MODEL_ACTIVATION(&activation),
+					BT_MESH_MODEL_SENSOR(&sensor),
 					BT_MESH_MODEL_MOTOR(&motor))),
-	BT_MESH_ELEM(2, BT_MESH_MODEL_LIST(BT_MESH_MODEL_SENSOR_CLI(&btMeshsensorCli)),
-		     BT_MESH_MODEL_NONE)
 };
 
 static const struct bt_mesh_comp comp = {

@@ -20,6 +20,8 @@ target_sources(app PRIVATE
 	${LIB_ROOT}/mesh_model/src/vnd_motor_client_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_unit_control_client_aa.c
 	${LIB_ROOT}/mesh_model/src/storage_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_sensor_aa.c
+	${LIB_ROOT}/mesh_model/src/vnd_sensor_client_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_activation_aa.c
 	${LIB_ROOT}/common/src/uart_aa.c
 	${LIB_ROOT}/common/src/check_crc_aa.c
