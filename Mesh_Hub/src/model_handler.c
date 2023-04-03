@@ -24,6 +24,7 @@ static struct btMeshUnitControl unitControl = {
 struct btMeshMotor motor = {
 	.handlers = &motorHandlers,
 };
+
 static struct btMeshActivation activation = {
 	.handlers = &activationHandlers,
 };
