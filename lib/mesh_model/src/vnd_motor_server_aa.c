@@ -13,7 +13,7 @@ static void sendToCbUartMotorStatus()
 {
 	static uint8_t seqNumber;
 	LOG_INF("send [UART][MOTOR_TYPE][GET] seqNumber %d", seqNumber);
-	dataQueueItemType uartTxQueueItem = headerFormatUartTx(0x01ab, MOTOR_TYPE, GET, true);
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(0x01ad, MOTOR_TYPE, GET, true);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
 
@@ -27,7 +27,7 @@ static void expiryMotorUpdateTimer(struct k_timer *timer_id)
 		LOG_ERR("timer_id->status > 5 send Message Alert");
 		uint8_t buf[2] = { 0x02, 0x05 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
-			false, 0x01ab, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
+			false, 0x01ad, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
 		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 		k_timer_stop(&motorUpdateTimer);
 	}
@@ -39,7 +39,7 @@ static void expiryMotorSetAckTimer(struct k_timer *timer_id)
 	uint8_t *seq = k_timer_user_data_get(&motorSetAckTimer);
 	uint8_t buf[2] = { 0x05, *seq };
 	dataQueueItemType publisherQueueItem =
-		createPublisherQueueItem(false, 0x01ab, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
+		createPublisherQueueItem(false, 0x01ad, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
 	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 	k_timer_stop(&motorSetAckTimer);
 }
@@ -79,8 +79,7 @@ int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr, uint8_t status
 	int ret = bt_mesh_model_send(motor->model, &ctx, &msg, NULL, NULL);
 
 	if (!ret) {
-		LOG_INF("Send [MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr,
-			seqNum);
+		LOG_INF("Send [MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr, seqNum);
 		k_timer_stop(&motorSetAckTimer);
 	} else {
 		LOG_ERR("ERROR Send [MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d", ctx.addr,
@@ -103,8 +102,7 @@ static int sendStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send [MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr,
-			seqNum);
+		LOG_INF("Send [MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr, seqNum);
 
 	} else {
 		LOG_ERR("ERROR Send [MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d", ctx->addr,
@@ -128,8 +126,7 @@ static int sendStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send [MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ctx->addr,
-			seqNum);
+		LOG_INF("Send [MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ctx->addr, seqNum);
 
 	} else {
 		LOG_ERR("ERROR[%d] Send [MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ret,
@@ -138,19 +135,18 @@ static int sendStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	return ret;
 }
 
-
 static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MOTOR_TYPE][SET] from addr:0x%04x. rssi:%d seqNumber:%d",
-		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
+	LOG_INF("Received [MOTOR_TYPE][SET] from addr:0x%04x. rssi:%d seqNumber:%d", ctx->addr,
+		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshMotor *motor = model->user_data;
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
 	uint8_t sequenceNumber = buf->data[buf->len - 1];
 	k_timer_user_data_set(&motorSetAckTimer, &sequenceNumber);
-	k_timer_start(&motorSetAckTimer, K_SECONDS(10), K_FOREVER);
+	k_timer_start(&motorSetAckTimer, K_SECONDS(0), K_FOREVER);
 
 	if (motor->handlers->forwardToUart) {
 		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, SET, data,
@@ -159,7 +155,6 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 
 	return 0;
 }
-
 
 static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
@@ -170,6 +165,7 @@ static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	uint8_t motorId = net_buf_simple_pull_u8(buf);
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 
+	updatereceived = false;
 	if (updatereceived) {
 		sendStatusId(model, ctx, motorId, seqNumber);
 	} else {
@@ -179,14 +175,13 @@ static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-
 static int handleGetAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
 	LOG_INF("Received [MOTOR_TYPE][GET_ALL] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
-	bool updatereceived = true;
+	bool updatereceived = false;
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 	if (updatereceived) {
 		sendStatusAll(model, ctx, seqNumber);

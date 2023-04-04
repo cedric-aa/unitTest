@@ -158,7 +158,7 @@ void uartTxThread(void)
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
 
-		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
+		//LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
 
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
 

@@ -24,7 +24,7 @@ void activationUpdateStatus(struct btMeshActivation *activation, uint8_t *buf, s
 }
 
 int sendActivationStatusCode(struct btMeshActivation *activation, uint16_t addr, uint8_t statusCode,
-			uint8_t seqNum)
+			     uint8_t seqNum)
 {
 	struct bt_mesh_msg_ctx ctx = {
 		.addr = addr,
@@ -128,6 +128,12 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
+	bool isUpdated = false;
+	if (isUpdated) {
+		encodeStatus(model, ctx, buf->data[buf->len - 1]);
+	} else {
+		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len]);
+	}
 
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, SET,

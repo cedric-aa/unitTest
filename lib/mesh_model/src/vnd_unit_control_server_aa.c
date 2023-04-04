@@ -30,7 +30,7 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 		LOG_ERR("timer_id->status > 5 send Message Alert");
 		uint8_t buf[2] = { 0x03, 0x00 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
-			false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
+			false, 0x01ad, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 		k_timer_stop(&updateTimer);
 	}
@@ -42,7 +42,7 @@ static void expirySetAckTimer(struct k_timer *timer_id)
 	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
 	uint8_t buf[2] = { 0x01, *seq };
 	dataQueueItemType publisherQueueItem = createPublisherQueueItem(
-		false, 0x01ab, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
+		false, 0x01ad, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 	k_timer_stop(&setAckTimer);
 }
@@ -104,7 +104,8 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE);
 
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-
+	//set to false because testing purpose
+	statusReceived = false;
 	if (statusReceived) {
 		LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
 			seqNumber);
@@ -203,7 +204,7 @@ static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 		sequenceNumber = buff[len - 1];
 
 		k_timer_user_data_set(&setAckTimer, &sequenceNumber);
-		k_timer_start(&setAckTimer, K_SECONDS(10), K_FOREVER);
+		k_timer_start(&setAckTimer, K_SECONDS(0), K_FOREVER);
 	}
 }
 
