@@ -30,17 +30,17 @@ int updateTemp(struct btMeshSensor *sensor)
 	sensor_channel_get(dev, SENSOR_DATA_TYPE, &rsp);
 
 	// Make sure the integer part is within the range of [0, 255]
-	sensor->val1 = (uint8_t)((rsp.val1 < 0) ? 0 : (rsp.val1 > 255) ? 255 : rsp.val1);
-	sensor->val2 = rsp.val2 / 10000;
-	LOG_INF("sensor1 value %d,%d", sensor->val1, sensor->val2);
+	sensor->integerPart = (uint8_t)((rsp.val1 < 0) ? 0 : (rsp.val1 > 255) ? 255 : rsp.val1);
+	sensor->fractionnalPart = rsp.val2 / 10000;
+	LOG_INF("sensor1 value %d,%d", sensor->integerPart, sensor->fractionnalPart);
 	LOG_INF("sensor2 value %d,%d", rsp.val1, rsp.val2);
 
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_SENSOR_OP_STATUS,
 				 BT_MESH_MODEL_SENSOR_OP_LEN_STATUS);
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_SENSOR_OP_STATUS);
-	net_buf_simple_add_u8(&msg, sensor->val1);
-	net_buf_simple_add_u8(&msg, sensor->val2);
+	net_buf_simple_add_u8(&msg, sensor->integerPart);
+	net_buf_simple_add_u8(&msg, sensor->fractionnalPart);
 	net_buf_simple_add_u8(&msg, sensor->sequenceNumber++);
 
 	if (!bt_mesh_model_send(sensor->model, &ctx, &msg, NULL, NULL)) {
@@ -55,31 +55,7 @@ int updateTemp(struct btMeshSensor *sensor)
 
 	return 0;
 }
-/*
-static int encodeStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx, uint8_t seqNumber)
-{
-	struct btMeshSensor *sensor = model->user_data;
-	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_SENSOR_OP_STATUS,
-				 BT_MESH_MODEL_SENSOR_OP_LEN_STATUS);
 
-	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_SENSOR_OP_STATUS);
-	net_buf_simple_add_u8(&msg, sensor->val1);
-	net_buf_simple_add_u8(&msg, sensor->val2);
-	net_buf_simple_add_u8(&msg, sensor->sequenceNumber++);
-
-	if (!bt_mesh_model_send(sensor->model, ctx, &msg, NULL, NULL)) {
-		LOG_INF("Send [SENSOR_TYPE][STATUS] to 0x%04x. sequenceNumber:%d ", ctx->addr,
-			seqNumber);
-		return 0;
-	} else {
-		LOG_ERR("ERROR Send [SENSOR_TYPE][STATUS] to 0x%04x. sequenceNumber:%d ", ctx->addr,
-			seqNumber);
-		return -1;
-	}
-
-	return 0;
-}
-*/
 static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
@@ -88,7 +64,6 @@ static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 
 	struct btMeshSensor *sensor = model->user_data;
 	updateTemp(sensor);
-	//encodeStatus(model, ctx, buf->data[buf->len - 1]);
 
 	return 0;
 }
@@ -132,7 +107,6 @@ static int btMeshSensorStart(struct bt_mesh_model *model)
 static void btMeshSensorReset(struct bt_mesh_model *model)
 {
 	LOG_DBG("Reset sensor model");
-	//   struct btMeshSensor *sensor = model->user_data;
 }
 
 const struct bt_mesh_model_cb btMeshSensorCb = {

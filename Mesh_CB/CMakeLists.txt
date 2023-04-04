@@ -16,7 +16,6 @@ target_sources(app PRIVATE
 	src/main.c
 	src/lb_service_handler.c
 	src/model_handler.c
-	src/model_level_aa.c
 	${LIB_ROOT}/mesh_model/src/storage_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_unit_control_aa.c
 	${LIB_ROOT}/mesh_model/src/vnd_unit_control_server_aa.c

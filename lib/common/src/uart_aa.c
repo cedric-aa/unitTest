@@ -84,7 +84,6 @@ static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 					if (err) {
 						LOG_ERR("UART message queue full, dropping data.");
 					}
-					LOG_INF("success received");
 				} else {
 					LOG_ERR("Received message has invalid CRC16 [%04x] [%04x] ",
 						crc, *receivedCrc);
@@ -139,8 +138,8 @@ void uartReceiveThread(void)
 	while (1) {
 		k_msgq_get(&uartMsgq, &uartReceiveQueueItem, K_FOREVER);
 
-		LOG_HEXDUMP_INF(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length,
-				"uart Receive Thread Thread");
+		//LOG_HEXDUMP_INF(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length,
+		//		"uart Receive Thread");
 
 		uartStateMachine(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length);
 	}

@@ -14,8 +14,6 @@ LOG_MODULE_REGISTER(model_handler, LOG_LEVEL_INF);
 #define THREAD_PUBLISHER_STACKSIZE 2048
 #define THREAD_PUBLISHER_PRIORITY 14
 
-struct btMeshlevelMotor levelMotors[] = { { .srvLvl = BT_MESH_LVL_SRV_INIT(&levelMotorHandlers) } };
-
 struct btMeshUnitControl unitControl = {
 	.handlers = &unitControlHandlers,
 };
@@ -41,8 +39,8 @@ void publisherThread(void)
 	while (1) {
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
-		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-				"Cb Publisher Thread");
+		//LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
+		//		"Cb Publisher Thread");
 
 		processedMessage processedMessage = processPublisherQueueItem(&publisherQueueItem);
 
@@ -51,7 +49,6 @@ void publisherThread(void)
 
 			if (processedMessage.messageID == STATUS_CODE) {
 				LOG_INF("received uart [UNIT_CONTROL_TYPE][STATUS_CODE] message from the Cb");
-				//TODO make sure that we ware sending the statusCode
 				sendUnitControlStatusCode(&unitControl, processedMessage.address,
 							  processedMessage.payloadBuffer[0],
 							  processedMessage.payloadBuffer[1]);
@@ -69,7 +66,6 @@ void publisherThread(void)
 
 			if (processedMessage.messageID == STATUS_CODE) {
 				LOG_INF("received uart [ACTIVATION_TYPE][STATUS_CODE] message from the Cb");
-				//TODO make sure that we ware sending the statusCode
 				sendActivationStatusCode(&activation, processedMessage.address,
 							 processedMessage.payloadBuffer[0],
 							 processedMessage.payloadBuffer[1]);
@@ -86,7 +82,6 @@ void publisherThread(void)
 
 			if (processedMessage.messageID == STATUS_CODE) {
 				LOG_INF("received uart [MOTOR_TYPE][STATUS_CODE] message from the Cb");
-				//TODO make sure that we ware sending the statusCode
 				sendMotorStatusCode(&motor, processedMessage.address,
 						    processedMessage.payloadBuffer[0],
 						    processedMessage.payloadBuffer[1]);
@@ -107,9 +102,7 @@ void publisherThread(void)
 			break;
 		}
 		if (processedMessage.isUartAck) {
-			// send throug uart the response
-			// err code
-			// push it to the queue handled by the uart thread
+			//TODO process UartAck Here
 		}
 	}
 }
@@ -173,10 +166,6 @@ static const struct bt_mesh_comp comp = {
 const struct bt_mesh_comp *model_handler_init(void)
 {
 	k_work_init_delayable(&attention_blink_work, attention_blink);
-
-	for (int i = 0; i < ARRAY_SIZE(levelMotors); ++i) {
-		k_work_init_delayable(&levelMotors[i].levelMotorDelayWork, levelMotorWork);
-	}
 
 	return &comp;
 }

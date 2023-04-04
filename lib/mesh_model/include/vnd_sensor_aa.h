@@ -44,10 +44,15 @@ struct btMeshSensor {
 	const struct btMeshSensorHandlers *handlers;
 
 	// Added fields
-	uint8_t val1;
-	uint8_t val2;
-	//uint8_t location;
+	uint8_t integerPart;
+	uint8_t fractionnalPart;
 	uint8_t sequenceNumber;
 };
+
+/** @cond INTERNAL_HIDDEN */
+extern const struct bt_mesh_model_op btMeshSensorOp[];
+extern const struct bt_mesh_model_cb btMeshSensorCb;
+extern const struct btMeshSensorHandlers sensorHandlers;
+/** @endcond */
 
 #endif /* VND_SENSOR_AA_H__ */

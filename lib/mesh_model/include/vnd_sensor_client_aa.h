@@ -12,10 +12,6 @@ struct btMeshSensorHandlers {
 
 int sendSensorGetStatus(struct btMeshSensor *sensor, uint16_t addr, uint8_t seqNum);
 
-/** @cond INTERNAL_HIDDEN */
-extern const struct bt_mesh_model_op btMeshSensorOp[];
-extern const struct bt_mesh_model_cb btMeshSensorCb;
-extern const struct btMeshSensorHandlers sensorHandlers;
-/** @endcond */
+
 
 #endif /* VND_SENSOR_AA_H__ */

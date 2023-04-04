@@ -68,9 +68,6 @@ struct btMeshMotor {
 	uint8_t seqNumber;
 };
 
-//int forwardToUart(struct btMeshMotor *motor, struct bt_mesh_msg_ctx *ctx, uint8_t messageId,
-//		  uint8_t *buf, uint8_t len);
-
 /** @cond INTERNAL_HIDDEN */
 extern const struct bt_mesh_model_op btMeshMotorOp[];
 extern const struct bt_mesh_model_cb btMeshMotorCb;

@@ -128,11 +128,6 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
-	/*activation->timerIsActive = net_buf_simple_pull_u8(buf);
-	activation->pwd = net_buf_simple_pull_le16(buf);
-	activation->tineRenaining = net_buf_simple_pull_u8(buf);
-	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-*/
 
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, SET,
@@ -150,11 +145,6 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
-	/*activation->timerIsActive = net_buf_simple_pull_u8(buf);
-	activation->pwd = net_buf_simple_pull_le16(buf);
-	activation->tineRenaining = net_buf_simple_pull_u8(buf);
-	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-*/
 
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, STATUS_CODE,

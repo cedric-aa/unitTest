@@ -1,9 +1,3 @@
-
-/*
- * Copyright (c) 2019 Nordic Semiconductor ASA
- *
- * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
- */
 #include <zephyr/bluetooth/mesh.h>
 #include "vnd_sensor_client_aa.h"
 #include "mesh/net.h"
@@ -16,7 +10,7 @@
 
 LOG_MODULE_REGISTER(vnd_sensor, LOG_LEVEL_INF);
 
-//client side
+
 int sendSensorGet(struct btMeshSensor *sensor, uint16_t addr, uint8_t seqNumber)
 {
 	struct bt_mesh_msg_ctx ctx = {
@@ -37,16 +31,11 @@ int sendSensorGet(struct btMeshSensor *sensor, uint16_t addr, uint8_t seqNumber)
 static int handleStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	LOG_INF("Received [SENSOR_TYPE][STATUS] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
+	LOG_INF("Received [SENSOR_TYPE][STATUS] from addr:0x%04x rssi:%d SequenceNumber:%d ", ctx->addr,
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
-	// Get user data from model
 	struct btMeshSensor *sensor = model->user_data;
-	/*
-	activation->timerIsActive = net_buf_simple_pull_u8(buf);
-	activation->timeRemaining = net_buf_simple_pull_le32(buf);
-	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-	*/
+	
 	if (sensor->handlers->forwardToUart) {
 		sensor->handlers->forwardToUart(false, ctx->addr, SENSOR_TYPE, STATUS, buf->data,
 						buf->len);
@@ -62,7 +51,7 @@ const struct bt_mesh_model_op btMeshSensorOp[] = {
 
 static int btMeshSensorUpdateHandler(struct bt_mesh_model *model)
 {
-	LOG_DBG("UpdanteHandler");
+	LOG_INF("UpdanteHandler");
 	return 0;
 }
 
@@ -87,7 +76,7 @@ static int btMeshSensorStart(struct bt_mesh_model *model)
 static void btMeshSensorReset(struct bt_mesh_model *model)
 {
 	LOG_DBG("Reset sensor model");
-	//   struct btMeshSensor *sensor = model->user_data;
+	
 }
 
 const struct bt_mesh_model_cb btMeshSensorCb = {

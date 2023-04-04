@@ -59,7 +59,6 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshUnitControl *unitControl = model->user_data;
-	//	LOG_HEXDUMP_INF(buf->data, buf->len, "net_buf");
 
 	uint8_t buff[buf->len];
 	uint8_t len = buf->len;
@@ -68,10 +67,10 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	unitControl->mode = net_buf_simple_pull_u8(buf);
 	unitControl->onOff = net_buf_simple_pull_u8(buf);
 	unitControl->fanSpeed = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.currentTemp.val1 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.currentTemp.val2 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.targetTemp.val1 = net_buf_simple_pull_u8(buf);
-	unitControl->tempValues.targetTemp.val2 = net_buf_simple_pull_u8(buf);
+	unitControl->tempValues.currentTemp.integerPart = net_buf_simple_pull_u8(buf);
+	unitControl->tempValues.currentTemp.fractionalPart = net_buf_simple_pull_u8(buf);
+	unitControl->tempValues.targetTemp.integerPart = net_buf_simple_pull_u8(buf);
+	unitControl->tempValues.targetTemp.fractionalPart = net_buf_simple_pull_u8(buf);
 	unitControl->unitControlType = net_buf_simple_pull_u8(buf);
 	//	uint8_t sequenceNumber = net_buf_simple_pull_u8(buf);
 	printClientStatus(unitControl);
@@ -128,7 +127,6 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 
 static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8_t len)
 {
-	// Send to the HUB
 	dataQueueItemType uartTxQueueItem =
 		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
@@ -140,7 +138,6 @@ static void unitControlHandleSatusCode(struct btMeshUnitControl *unitControl,
 				       struct bt_mesh_msg_ctx *ctx, uint8_t statusCode,
 				       uint8_t sequenceNumber)
 {
-	// send to the Hub
 	dataQueueItemType uartTxQueueItem =
 		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS_CODE, false);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = statusCode; // status

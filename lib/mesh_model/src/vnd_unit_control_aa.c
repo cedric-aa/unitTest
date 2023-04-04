@@ -26,10 +26,10 @@ void printClientStatus(struct btMeshUnitControl *unitControl)
 	LOG_DBG("OnOff: [%s] ", unitControl->onOff ? "true" : "false");
 	LOG_DBG("Mode: [%s]", modeToString[unitControl->mode]);
 	LOG_DBG("Fan Speed: [%s] ", fanSpeedToString[unitControl->fanSpeed]);
-	LOG_DBG("Current temperature: [%d,%d-C] ", unitControl->tempValues.currentTemp.val1,
-		unitControl->tempValues.currentTemp.val2);
-	LOG_DBG("Target temperature: [%d,%d-C] ", unitControl->tempValues.targetTemp.val1,
-		unitControl->tempValues.targetTemp.val2);
+	LOG_DBG("Current temperature: [%d,%d-C] ", unitControl->tempValues.currentTemp.integerPart,
+		unitControl->tempValues.currentTemp.fractionalPart);
+	LOG_DBG("Target temperature: [%d,%d-C] ", unitControl->tempValues.targetTemp.integerPart,
+		unitControl->tempValues.targetTemp.fractionalPart);
 	LOG_DBG("Unit Control Type: [%d] ", unitControl->unitControlType);
 }
 
