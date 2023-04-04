@@ -35,7 +35,7 @@ static void expiryMotorUpdateTimer(struct k_timer *timer_id)
 
 static void expiryMotorSetAckTimer(struct k_timer *timer_id)
 {
-	LOG_DBG("//setAcktimeout");
+	LOG_DBG("SetAct Timeout");
 	uint8_t *seq = k_timer_user_data_get(&motorSetAckTimer);
 	uint8_t buf[2] = { 0x05, *seq };
 	dataQueueItemType publisherQueueItem =
@@ -79,11 +79,11 @@ int sendMotorStatusCode(struct btMeshMotor *motor, uint16_t addr, uint8_t status
 	int ret = bt_mesh_model_send(motor->model, &ctx, &msg, NULL, NULL);
 
 	if (!ret) {
-		LOG_INF("Send [MESH][MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr,
+		LOG_INF("Send [MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d ", ctx.addr,
 			seqNum);
 		k_timer_stop(&motorSetAckTimer);
 	} else {
-		LOG_ERR("ERROR Send [MESH][MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d", ctx.addr,
+		LOG_ERR("ERROR Send [MOTOR_TYPE][STATUS_CODE] to 0x%04x seqNum:%d", ctx.addr,
 			seqNum);
 	}
 	return ret;
@@ -103,11 +103,11 @@ static int sendStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send [MESH][MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr,
+		LOG_INF("Send [MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d ", ctx->addr,
 			seqNum);
 
 	} else {
-		LOG_ERR("ERROR Send [MESH][MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d", ctx->addr,
+		LOG_ERR("ERROR Send [MOTOR_TYPE][STATUS_ID] to 0x%04x. seqNum:%d", ctx->addr,
 			seqNum);
 	}
 	return ret;
@@ -128,21 +128,21 @@ static int sendStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 
 	int ret = bt_mesh_model_send(motor->model, ctx, &msg, NULL, NULL);
 	if (!ret) {
-		LOG_INF("Send [MESH][MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ctx->addr,
+		LOG_INF("Send [MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ctx->addr,
 			seqNum);
 
 	} else {
-		LOG_ERR("ERROR[%d] Send [MESH][MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ret,
+		LOG_ERR("ERROR[%d] Send [MOTOR_TYPE][STATUS_ALL] to 0x%04x. seqNum:%d ", ret,
 			ctx->addr, seqNum);
 	}
 	return ret;
 }
 
-//server side
+
 static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		     struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][SET] from addr:0x%04x. rssi:%d seqNumber:%d",
+	LOG_INF("Received [MOTOR_TYPE][SET] from addr:0x%04x. rssi:%d seqNumber:%d",
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshMotor *motor = model->user_data;
@@ -160,11 +160,11 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-//server side
+
 static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][GET_ID] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
+	LOG_INF("Received [MOTOR_TYPE][GET_ID] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 	bool updatereceived = true;
 	uint8_t motorId = net_buf_simple_pull_u8(buf);
@@ -179,11 +179,11 @@ static int handleGetId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-//server side
+
 static int handleGetAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	LOG_INF("Received [MESH][MOTOR_TYPE][GET_ALL] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
+	LOG_INF("Received [MOTOR_TYPE][GET_ALL] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	bool updatereceived = true;
@@ -205,14 +205,14 @@ const struct bt_mesh_model_op btMeshMotorOp[] = {
 	  BT_MESH_LEN_EXACT(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_GET_ALL), handleGetAll },
 	BT_MESH_MODEL_OP_END,
 };
-//todo
+
 static int btMeshMotorUpdateHandler(struct bt_mesh_model *model)
 {
 	LOG_DBG("MotorUpdateHandler");
 	sendToCbUartMotorStatus();
 	return 0;
 }
-//todo
+
 static int btMeshMotorInit(struct bt_mesh_model *model)
 {
 	struct btMeshMotor *motor = model->user_data;
@@ -224,19 +224,19 @@ static int btMeshMotorInit(struct bt_mesh_model *model)
 	memcpy(motor->motorLevel, temp, sizeof(temp));
 	return 0;
 }
-//todo
+
 static int btMeshMotorStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("Motor start");
 	k_timer_start(&motorUpdateTimer, K_SECONDS(1), K_SECONDS(10));
 	return 0;
 }
-//todo
+
 static void btMeshMotorReset(struct bt_mesh_model *model)
 {
 	LOG_DBG("Reset motor model");
 }
-//todo
+
 const struct bt_mesh_model_cb btMeshMotorCb = {
 	.init = btMeshMotorInit,
 	.start = btMeshMotorStart,

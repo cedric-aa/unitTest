@@ -60,9 +60,9 @@ enum unitControlFanSpeed {
 /** Bluetooth Mesh unitControl temperature */
 struct temperatureValue {
 	/** Integer part of the value. */
-	int8_t val1;
+	int8_t integerPart;
 	/** Fractional part of the value (in one-millionth parts). */
-	int8_t val2;
+	int8_t fractionalPart;
 };
 
 struct temperatureValues {

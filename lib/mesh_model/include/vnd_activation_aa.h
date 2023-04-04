@@ -1,6 +1,6 @@
 /**
  * @file
- * @defgroup Mesh_CB
+ * @defgroup Mesh_Activation
  * @{
  * @brief API for the Bluetooth Mesh custom/vendor Activation.
  */

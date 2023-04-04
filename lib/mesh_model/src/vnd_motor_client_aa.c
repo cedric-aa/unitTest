@@ -85,7 +85,7 @@ int sendSetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t id, ui
 	return ret;
 }
 
-//client side
+
 static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
@@ -95,12 +95,11 @@ static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
-	//LOG_HEXDUMP_INF(msg.data, msg.len, "buf net");
 
 	for (int i = 0; i < sizeof(data); i++) {
 		motor->motorLevel[i] = net_buf_simple_pull_u8(buf);
 	}
-	// Invoke status handler if present
+	
 	if (motor->handlers->forwardToUart) {
 		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS, data,
 					       sizeof(data));
@@ -108,7 +107,7 @@ static int handleStatusAll(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	return 0;
 }
 
-//client side
+
 static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
@@ -119,7 +118,7 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
 
-	// Invoke status handler if present
+	
 	if (motor->handlers->forwardToUart) {
 		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS_CODE, data,
 					       sizeof(data));
@@ -127,7 +126,7 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-//client side
+
 static int handleStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
@@ -141,7 +140,7 @@ static int handleStatusId(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *c
 	int id = net_buf_simple_pull_u8(buf);
 	motor->motorLevel[id] = net_buf_simple_pull_u8(buf);
 	motor->seqNumber = net_buf_simple_pull_u8(buf);
-	// Invoke status handler if present
+
 	if (motor->handlers->forwardToUart) {
 		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, STATUS_ID, data,
 					       sizeof(data));
@@ -158,13 +157,13 @@ const struct bt_mesh_model_op btMeshMotorOp[] = {
 	  BT_MESH_LEN_EXACT(BT_MESH_MODEL_MOTOR_OP_LEN_STATUS_ALL), handleStatusAll },
 	BT_MESH_MODEL_OP_END,
 };
-//todo
+
 static int btMeshMotorUpdateHandler(struct bt_mesh_model *model)
 {
 	LOG_DBG("MotorUpdateHandler");
 	return 0;
 }
-//todo
+
 static int btMeshMotorInit(struct bt_mesh_model *model)
 {
 	struct btMeshMotor *motor = model->user_data;
@@ -175,18 +174,18 @@ static int btMeshMotorInit(struct bt_mesh_model *model)
 
 	return 0;
 }
-//todo
+
 static int btMeshMotorStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("Motor start");
 	return 0;
 }
-//todo
+
 static void btMeshMotorReset(struct bt_mesh_model *model)
 {
 	LOG_DBG("Reset motor model");
 }
-//todo
+
 const struct bt_mesh_model_cb btMeshMotorCb = {
 	.init = btMeshMotorInit,
 	.start = btMeshMotorStart,

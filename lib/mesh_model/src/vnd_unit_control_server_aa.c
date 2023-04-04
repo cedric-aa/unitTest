@@ -38,7 +38,7 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 
 static void expirySetAckTimer(struct k_timer *timer_id)
 {
-	LOG_DBG("//setAcktimeout");
+	LOG_INF("unitControl set Ack Timeout");
 	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
 	uint8_t buf[2] = { 0x01, *seq };
 	dataQueueItemType publisherQueueItem = createPublisherQueueItem(
@@ -60,10 +60,10 @@ static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
 	net_buf_simple_add_u8(buf, unitControl->mode);
 	net_buf_simple_add_u8(buf, unitControl->onOff);
 	net_buf_simple_add_u8(buf, unitControl->fanSpeed);
-	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.val1);
-	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.val2);
-	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.val1);
-	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.val2);
+	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.integerPart);
+	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.fractionalPart);
+	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.integerPart);
+	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.fractionalPart);
 	net_buf_simple_add_u8(buf, unitControl->unitControlType);
 	net_buf_simple_add_u8(buf, seqNumber);
 }
@@ -164,10 +164,10 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 	unitControl->mode = 1;
 	unitControl->onOff = 1;
 	unitControl->fanSpeed = 1;
-	unitControl->tempValues.currentTemp.val1 = 1;
-	unitControl->tempValues.currentTemp.val2 = 1;
-	unitControl->tempValues.targetTemp.val1 = 1;
-	unitControl->tempValues.targetTemp.val2 = 1;
+	unitControl->tempValues.currentTemp.integerPart = 1;
+	unitControl->tempValues.currentTemp.fractionalPart = 1;
+	unitControl->tempValues.targetTemp.integerPart = 1;
+	unitControl->tempValues.targetTemp.fractionalPart = 1;
 	unitControl->unitControlType = 1;
 	statusReceived = false;
 
@@ -218,10 +218,10 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 	unitControl->mode = buf[2];
 	unitControl->onOff = buf[3];
 	unitControl->fanSpeed = buf[4];
-	unitControl->tempValues.currentTemp.val1 = buf[5];
-	unitControl->tempValues.currentTemp.val2 = buf[6];
-	unitControl->tempValues.targetTemp.val1 = buf[7];
-	unitControl->tempValues.targetTemp.val2 = buf[8];
+	unitControl->tempValues.currentTemp.integerPart = buf[5];
+	unitControl->tempValues.currentTemp.fractionalPart = buf[6];
+	unitControl->tempValues.targetTemp.integerPart = buf[7];
+	unitControl->tempValues.targetTemp.fractionalPart = buf[8];
 	unitControl->unitControlType = buf[9];
 	printClientStatus(unitControl);
 }

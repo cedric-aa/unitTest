@@ -15,10 +15,5 @@ int sendSetIdMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t lvl, u
 			uint8_t seqNum);
 int sendGetAllMotorLevel(struct btMeshMotor *motor, uint16_t addr, uint8_t seqNum);
 
-/*
-extern const struct bt_mesh_model_op btMeshMotorOp[];
-extern const struct bt_mesh_model_cb btMeshMotorCb;
-extern const struct btMeshMotorHandlers motorHandlers;
-*/
 
 #endif /* VND_ACTIVATION_AA_H__ */

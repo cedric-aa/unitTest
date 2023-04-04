@@ -13,10 +13,5 @@ extern struct btMeshMotor motor;
 extern struct k_timer motorSetAckTimer;
 extern struct k_timer motorUpdateTimer;
 
-/*
-extern const struct bt_mesh_model_op btMeshMotorOp[];
-extern const struct bt_mesh_model_cb btMeshMotorCb;
-extern const struct btMeshMotorHandlers motorHandlers;
-*/
 
 #endif /* VND_ACTIVATION_AA_H__ */
