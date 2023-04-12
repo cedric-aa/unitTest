@@ -25,7 +25,7 @@ class PrintLines(LineReader):
         sys.stdout.write('port closed\n')
 
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM6', baudrate=115200, timeout=2)
+ser = serial.serial_for_url('COM17', baudrate=115200, timeout=2)
 response_queue = queue.Queue()  # Create a queue to store received data.
 cond = threading.Condition()
 
