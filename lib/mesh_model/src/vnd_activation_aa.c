@@ -115,7 +115,7 @@ int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t address, 
 	net_buf_simple_add_le16(&buf, *(uint16_t *)&buffer[1]); // password
 	net_buf_simple_add_u8(&buf, buffer[3]); // lockOutDay
 	net_buf_simple_add_u8(&buf, buffer[4]); // sequenceNumber
-	LOG_INF("Send [ACTIVATION_TYPE][SET] to 0x%04x. seqNumber:%d ", ctx.addr, buffer[3]);
+	LOG_INF("Send [ACTIVATION_TYPE][SET] to 0x%04x. seqNumber:%d ", ctx.addr, buffer[4]);
 
 	return bt_mesh_model_send(activation->model, &ctx, &buf, NULL, NULL);
 }
@@ -124,15 +124,16 @@ int sendActivationSetPwd(struct btMeshActivation *activation, uint16_t address, 
 static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	LOG_INF("Received [ACTIVATION_TYPE][SET] from addr:0x%04x  rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf->data[buf->len - 1]);
+	LOG_INF("Received [ACTIVATION_TYPE][SET] from addr:0x%04x  rssi:%d sequenceNumber:%d",
+		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
 	bool isUpdated = false;
+
 	if (isUpdated) {
 		encodeStatus(model, ctx, buf->data[buf->len - 1]);
 	} else {
-		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len]);
+		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len - 1]);
 	}
 
 	if (activation->handlers->forwardToUart) {
@@ -147,7 +148,7 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	LOG_INF("Received [ACTIVATION_TYPE][STATUS_CODE] from addr:0x%04x  rssi:%d tid:%d ",
+	LOG_INF("Received [ACTIVATION_TYPE][STATUS_CODE] from addr:0x%04x rssi:%d sequenceNumber:%d ",
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
@@ -163,8 +164,8 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 static int handleStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	LOG_INF("Received [ACTIVATION_TYPE][STATUS] from addr:0x%04x rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf->data[buf->len - 1]);
+	LOG_INF("Received [ACTIVATION_TYPE][STATUS] from addr:0x%04x rssi:%d sequenceNumber:%d ",
+		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	// Get user data from model
 	struct btMeshActivation *activation = model->user_data;
@@ -184,8 +185,8 @@ static int handleStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	LOG_INF("Received [ACTIVATION_TYPE][GET] from addr:0x%04x. rssi:%d tid:%d ", ctx->addr,
-		ctx->recv_rssi, buf->data[buf->len - 1]);
+	LOG_INF("Received [ACTIVATION_TYPE][GET] from addr:0x%04x. rssi:%d sequenceNumber:%d ",
+		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
 	bool isUpdated = false;
@@ -193,7 +194,7 @@ static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	if (isUpdated) {
 		encodeStatus(model, ctx, buf->data[buf->len - 1]);
 	} else {
-		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len]);
+		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len - 1]);
 	}
 
 	return 0;

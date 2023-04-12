@@ -15,7 +15,6 @@ class PrintLines(LineReader):
     def connection_made(self, transport):
         super(PrintLines, self).connection_made(transport)
         sys.stdout.write('port opened\n')
-        self.write_line('hello world')
 
     def handle_line(self, data):
         sys.stdout.write('line received: {}\n'.format(repr(data)))
@@ -26,10 +25,11 @@ class PrintLines(LineReader):
         sys.stdout.write('port closed\n')
 
 
-# ser = serial.serial_for_url('loop://', baudrate=115200, timeout=1)
-# with ReaderThread(ser, PrintLines) as protocol:
-#     protocol.write_line('hello')
-#     time.sleep(2)
+
+calculator = Calculator(Crc16.CCITT)
+ser = serial.serial_for_url('COM6', baudrate=115200, timeout=0)
+
+
 
 commands = (
     bytes((0x01, 0x01, 0x01, 0x01, 0x02, 20, 0, 24, 0, 19)),    # Set - Unit Control : Cool, On, Fan speed 2, Current Temp: 20.0, Target Temp: 24.0
@@ -38,18 +38,9 @@ commands = (
     bytes((0x04, 0x06, 1)), # Motor Get Id : MotorId = 1 
     bytes([0x04, 0x03]), # Get Motor all
     bytes([0x02, 0x03]), # Get Activation  
-    bytes([0x02, 0x01,0x01,0x01, 0x01]), # Set Activation need to be fixed   
+    bytes([0x02, 0x01,0x01,0x01, 0x01, 0x01]), # Set Activation    
     
 )
-
-calculator = Calculator(Crc16.CCITT)
-# data = commands[1]
-# print(calculator.checksum(data).to_bytes(2, 'big'))
-
-ser = serial.serial_for_url('COM6', baudrate=115200, timeout=0)
-
-sequenceNumber = 0
-
 
 def addSequenceNumberAndPackWithAddress(address: int, msgData: bytes, sequenceNumber: int) -> bytes:
     payload = b'\x00' + \
@@ -58,6 +49,53 @@ def addSequenceNumberAndPackWithAddress(address: int, msgData: bytes, sequenceNu
     crcBytesLittleEndian = calculator.checksum(payload).to_bytes(2, 'little')
 
     return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crcBytesLittleEndian + b'\x7F'
+
+
+def handle_unit_control(message_id, data_bytes):
+    if message_id == 0x01:
+        print("Set Unit Control:")
+    elif message_id == 0x03:
+        print("Get Unit Control:")
+    elif message_id == 0x04:
+        error_code = data_bytes[0]
+        sequence_number = data_bytes[1]
+        print("Status Code Unit Control: Error Code = {}, Sequence Number = {}".format(error_code, sequence_number))
+
+def handle_motor_control(message_id, data_bytes):
+    if message_id == 0x01:
+        print("Motor Set Id:")
+    elif message_id == 0x06:
+        print("Motor Get Id:")
+    elif message_id == 0x03:
+        print("Get Motor all:")
+    elif message_id == 0x04:
+        error_code = data_bytes[0]
+        sequence_number = data_bytes[1]
+        print("Status Code Motor: Error Code = {}, Sequence Number = {}".format(error_code, sequence_number))
+
+def handle_activation_control(message_id, data_bytes):
+    if message_id == 0x03:
+        print("Get Activation:")
+    elif message_id == 0x01:
+        print("Set Activation:")
+    elif message_id == 0x04:
+        error_code = data_bytes[0]
+        sequence_number = data_bytes[1]
+        print("Status Code Activation: Error Code = {}, Sequence Number = {}".format(error_code, sequence_number))
+
+def parse_message(message_type, message_id, data_bytes):
+    message_type_int = int.from_bytes(message_type, 'big')
+    message_id_int = int.from_bytes(message_id, 'big')
+
+    if message_type_int == 0x01:  # Unit Control
+        handle_unit_control(message_id_int, data_bytes)
+    elif message_type_int == 0x04:  # Motor Control
+        handle_motor_control(message_id_int, data_bytes)
+    elif message_type_int == 0x02:  # Activation Control
+        handle_activation_control(message_id_int, data_bytes)
+    else:
+        print("Unknown message type:", message_type.hex())
+
 
 
 def reader():
@@ -82,8 +120,8 @@ def reader():
             print("Error: Invalid end byte")
         else:
             message = ' '.join(['0x' + byte.hex() for byte in (startByte, lengthByte, uartAck, addressBytes[::-1], messageType, messageId, dataBytes, crcBytes, endByte)])
-            print("receive",message)
-
+         print("receive",message)
+            parse_message(messageType, messageId, dataBytes)  # Call parse_message function
 
 def sender():
     sequenceNumber = 0  # Initialize sequence number
