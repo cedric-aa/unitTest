@@ -25,7 +25,7 @@ class PrintLines(LineReader):
         sys.stdout.write('port closed\n')
 
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM17', baudrate=115200, timeout=2)
+ser = serial.serial_for_url('COM6', baudrate=115200, timeout=2)
 response_queue = queue.Queue()  # Create a queue to store received data.
 cond = threading.Condition()
 
@@ -52,9 +52,11 @@ def send_command1(command):
     message = packWithAddress(0x9601, msgData, sequence_number,uart_ack)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     
+    
     # Retry sending the data until it's successfully sent
     while True:
         try:
+            print("send",hex_message)
             ser.write(message)
             break  # Data was sent successfully, exit the loop
         except Exception as e:
@@ -107,7 +109,7 @@ def parse_message(message_type, message_id, data_bytes,sequence_number):
     else:
         print("Unknown message type:", message_type.hex())
         
-def wait_for_response(timeout=2):
+def wait_for_response(timeout=5):
     with cond:
         try:
             response = response_queue.get(timeout=timeout)
@@ -189,8 +191,8 @@ def reader():
         else:
             message = (startByte + lengthByte + uartAck + addressBytes[::-1] + messageType +
                        messageId + dataBytes + crcBytes + endByte)
-            print("receive",message)
-            response_queue.queue.clear()
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("receive",hex_message)
             response_queue.put(message)
 
 def sender():
@@ -201,7 +203,7 @@ def sender():
         for test_case in test_cases:
                 run_test_case(test_case,sequence_number)
                 sequence_number = sequence_number + 1
-                time.sleep(2)
+                time.sleep(0)
                 
                  
                 
