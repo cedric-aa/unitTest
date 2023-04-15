@@ -94,7 +94,6 @@ static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 					publisherQueueItem.length = payloadSize;
 					memcpy(publisherQueueItem.bufferItem,
 					       &message[START_FRAME_SIZE], payloadSize);
-
 					int err = k_msgq_put(&publisherQueue, &publisherQueueItem,
 							     K_NO_WAIT);
 								 k_timer_stop(&missingByteWorkAround);
@@ -169,27 +168,28 @@ void uartTxThread(void)
 	while (1) {
 		k_msgq_get(&uartTxQueue, &uartTxQueueItem, K_FOREVER);
 
-		//	LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
-		//		"uart Tx Thread Thread");
+			LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
+				"uart Tx Thread Thread");
 
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
 
-		//LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
+		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
 
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
-
+		k_msleep(10);
 		if (ret) {
+			LOG_ERR("Error uart TX [%d]", ret);
 			k_msleep(5);
 			ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
 			if (ret) {
 				k_msleep(5);
 				LOG_ERR("Error uart TX [%d]", ret);
 			} else {
-			//		LOG_INF("uart TX send Success");
+					LOG_INF("uart TX send Success");
 			}
 		} else {
-			//LOG_INF("uart TX send Success");
+			LOG_INF("uart TX send Success");
 		}
 	}
 }
