@@ -39,8 +39,8 @@ void publisherThread(void)
 	while (1) {
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
-		//LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-		//		"Cb Publisher Thread");
+		LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
+				"Cb Publisher Thread");
 
 		processedMessage processedMessage = processPublisherQueueItem(&publisherQueueItem);
 

@@ -15,7 +15,7 @@ static void sendUnitControlGetToCbUart()
 	static uint8_t seqNumber;
 	LOG_INF("send [UART][UNIT_CONTROL_TYPE][GET] seqNumber %d", seqNumber);
 	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(0x0101, UNIT_CONTROL_TYPE, GET, true);
+		headerFormatUartTx(0x1234, UNIT_CONTROL_TYPE, GET, true);
 	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
 	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
 
@@ -27,12 +27,13 @@ static void expiryUpdateTimer(struct k_timer *timer_id)
 	sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
 		statusReceived = false;
-		LOG_ERR("timer_id->status > 5 send Message Alert");
+		LOG_ERR("unit control timer_id->status > 5 send Message Alert");
 		uint8_t buf[2] = { 0x03, 0x00 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
 			false, 0x01ad, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 		k_timer_stop(&updateTimer);
+		k_timer_start(&updateTimer, K_SECONDS(0), K_SECONDS(10));
 	}
 }
 
@@ -89,6 +90,7 @@ void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t a
 		LOG_ERR("ERROR [%d] send [STATUS_CODE] sequenceNumber:%d", ret, seqNumber);
 	} else {
 		k_timer_stop(&setAckTimer);
+		sendUnitControlGetToCbUart();
 		LOG_INF("Send [unitControl][STATUS_CODE][%d] to 0x%04x. sequenceNumber:%d ",
 			statusCode, ctx.addr, seqNumber);
 	}
@@ -105,7 +107,6 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 
 	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 	//set to false because testing purpose
-	statusReceived = false;
 	if (statusReceived) {
 		LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
 			seqNumber);
@@ -161,15 +162,6 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 				      sizeof(unitControl->buf));
 	unitControl->pub.msg = &unitControl->pubMsg;
 	unitControl->pub.update = btMeshUnitControlUpdateHandler;
-
-	unitControl->mode = 1;
-	unitControl->onOff = 1;
-	unitControl->fanSpeed = 1;
-	unitControl->tempValues.currentTemp.integerPart = 1;
-	unitControl->tempValues.currentTemp.fractionalPart = 1;
-	unitControl->tempValues.targetTemp.integerPart = 1;
-	unitControl->tempValues.targetTemp.fractionalPart = 1;
-	unitControl->unitControlType = 1;
 	statusReceived = false;
 
 	return 0;
@@ -178,7 +170,7 @@ static int btMeshUnitControlInit(struct bt_mesh_model *model)
 static int btMeshUnitControlStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("btMeshUnitControlStart");
-	k_timer_start(&updateTimer, K_SECONDS(1), K_SECONDS(10));
+	k_timer_start(&updateTimer, K_SECONDS(0), K_SECONDS(10));
 	return 0;
 }
 
@@ -204,7 +196,7 @@ static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 		sequenceNumber = buff[len - 1];
 
 		k_timer_user_data_set(&setAckTimer, &sequenceNumber);
-		k_timer_start(&setAckTimer, K_SECONDS(0), K_FOREVER);
+		k_timer_start(&setAckTimer, K_SECONDS(10), K_FOREVER);
 	}
 }
 
@@ -215,14 +207,13 @@ const struct btMeshUnitControlHandlers unitControlHandlers = {
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize)
 {
 	statusReceived = true;
-
-	unitControl->mode = buf[2];
-	unitControl->onOff = buf[3];
-	unitControl->fanSpeed = buf[4];
-	unitControl->tempValues.currentTemp.integerPart = buf[5];
-	unitControl->tempValues.currentTemp.fractionalPart = buf[6];
-	unitControl->tempValues.targetTemp.integerPart = buf[7];
-	unitControl->tempValues.targetTemp.fractionalPart = buf[8];
-	unitControl->unitControlType = buf[9];
+	unitControl->mode = buf[0];
+	unitControl->onOff = buf[1];
+	unitControl->fanSpeed = buf[2];
+	unitControl->tempValues.currentTemp.integerPart = buf[3];
+	unitControl->tempValues.currentTemp.fractionalPart = buf[4];
+	unitControl->tempValues.targetTemp.integerPart = buf[5];
+	unitControl->tempValues.targetTemp.fractionalPart = buf[6];
+	unitControl->unitControlType = buf[7];
 	printClientStatus(unitControl);
 }

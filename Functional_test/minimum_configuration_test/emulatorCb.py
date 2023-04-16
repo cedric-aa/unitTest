@@ -27,12 +27,14 @@ class PrintLines(LineReader):
 
 class UnitControl:
     def __init__(self):
-        self.target_temp = {'val1': 0, 'val2': 0}
-        self.current_temp = {'val1': 0, 'val2': 0}
-        self.mode = 0
+        
+        
+        self.mode = 2
         self.on_off = 0
-        self.fan_speed = 0
-        self.unit_control_type = 0
+        self.fan_speed = 5
+        self.current_temp = {'val1': 4, 'val2': 5}
+        self.target_temp = {'val1': 6, 'val2': 7}
+        self.unit_control_type = 8
 
 
 calculator = Calculator(Crc16.CCITT)
@@ -53,24 +55,28 @@ def pack_message(address: bytes, message_type: int, message_id: int, msg_data: b
 
 def handle_set_unit_control(data_bytes):
     global unit_control
-    unit_control.target_temp['val1'] = data_bytes[0]
-    unit_control.target_temp['val2'] = data_bytes[1]
-    unit_control.mode = data_bytes[4]
-    unit_control.on_off = data_bytes[5]
-    unit_control.fan_speed = data_bytes[6]
+
+    unit_control.mode = data_bytes[0]
+    unit_control.on_off = data_bytes[1]
+    unit_control.fan_speed = data_bytes[2]
+    unit_control.current_temp['val1'] = data_bytes[3]
+    unit_control.current_temp['val2'] = data_bytes[4]
+    unit_control.target_temp['val1'] = data_bytes[3]
+    unit_control.target_temp['val2'] = data_bytes[4]
     unit_control.unit_control_type = data_bytes[7]
 
 
 def handle_get_unit_control(address, sequence_number):
     global unit_control
     msg_data = bytearray()
-    msg_data.append(unit_control.target_temp['val1'])
-    msg_data.append(unit_control.target_temp['val2'])
-    msg_data.append(unit_control.current_temp['val1'])
-    msg_data.append(unit_control.current_temp['val2'])
+
     msg_data.append(unit_control.mode)
     msg_data.append(unit_control.on_off)
     msg_data.append(unit_control.fan_speed)
+    msg_data.append(unit_control.current_temp['val1'])
+    msg_data.append(unit_control.current_temp['val2'])
+    msg_data.append(unit_control.target_temp['val1'])
+    msg_data.append(unit_control.target_temp['val2'])
     msg_data.append(unit_control.unit_control_type)
 
     message_type = 0x01
