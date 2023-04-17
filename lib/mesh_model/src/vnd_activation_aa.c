@@ -14,13 +14,24 @@
 
 LOG_MODULE_REGISTER(vnd_activation, LOG_LEVEL_INF);
 
+static bool isUpdated;
+
+static void sendToCbUartActivationStatus()
+{
+	static uint8_t seqNumber;
+	LOG_INF("send [UART][MOTOR_TYPE][GET] seqNumber %d", seqNumber);
+	dataQueueItemType uartTxQueueItem = headerFormatUartTx(0x01ad, ACTIVATION_TYPE, GET, true);
+	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = seqNumber++;
+	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
+
+	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
+}
+
 void activationUpdateStatus(struct btMeshActivation *activation, uint8_t *buf, size_t bufSize)
 {
-	//isUpdated = true;
+	isUpdated = true;
 	activation->timerState = buf[0];
-	memcpy(&activation->pwd, &buf[1], sizeof(uint16_t));
-	activation->lockOutDay = buf[3];
-	//activation->seqNumber == buf[4];
+	memcpy(&activation->dayRemaining, &buf[1], sizeof(uint16_t));
 }
 
 int sendActivationStatusCode(struct btMeshActivation *activation, uint16_t addr, uint8_t statusCode,
@@ -62,8 +73,7 @@ static int encodeStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_ACTIVATION_OP_STATUS);
 	net_buf_simple_add_u8(&msg, activation->timerState);
-	net_buf_simple_add_le16(&msg, activation->pwd);
-	net_buf_simple_add_u8(&msg, seqNumber);
+	net_buf_simple_add_u8(&msg, activation->dayRemaining);
 
 	if (!bt_mesh_model_send(activation->model, ctx, &msg, NULL, NULL)) {
 		LOG_INF("Send [ACTIVATION_TYPE][STATUS] to 0x%04x. sequenceNumber:%d ", ctx->addr,
@@ -128,13 +138,10 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
-	bool isUpdated = false;
 
-	if (isUpdated) {
-		encodeStatus(model, ctx, buf->data[buf->len - 1]);
-	} else {
-		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len - 1]);
-	}
+	//testing removed it after
+	sendActivationStatusCode(activation, ctx->addr, WAITING_FOR_RESPONSE,
+				 buf->data[buf->len - 1]);
 
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, SET,
@@ -169,11 +176,7 @@ static int handleStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	// Get user data from model
 	struct btMeshActivation *activation = model->user_data;
-	/*
-	activation->timerIsActive = net_buf_simple_pull_u8(buf);
-	activation->timeRemaining = net_buf_simple_pull_le32(buf);
-	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-	*/
+
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, STATUS,
 						    buf->data, buf->len);
@@ -189,12 +192,13 @@ static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshActivation *activation = model->user_data;
-	bool isUpdated = false;
 
 	if (isUpdated) {
 		encodeStatus(model, ctx, buf->data[buf->len - 1]);
 	} else {
-		sendActivationStatusCode(activation, ctx->addr, 0x05, buf->data[buf->len - 1]);
+		sendActivationStatusCode(activation, ctx->addr, WAITING_FOR_RESPONSE,
+					 buf->data[buf->len - 1]);
+		sendToCbUartActivationStatus();
 	}
 
 	return 0;
@@ -225,13 +229,15 @@ static int btMeshActivationInit(struct bt_mesh_model *model)
 				      sizeof(activation->buf));
 	activation->pub.msg = &activation->pubMsg;
 	activation->pub.update = btMeshActivationUpdateHandler;
+	isUpdated = false;
 
 	return 0;
 }
 
 static int btMeshActivationStart(struct bt_mesh_model *model)
 {
-	LOG_DBG("Activation start");
+	LOG_INF("Activation start");
+	sendToCbUartActivationStatus();
 
 	return 0;
 }

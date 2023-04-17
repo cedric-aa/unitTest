@@ -26,9 +26,7 @@ class PrintLines(LineReader):
 
 
 class UnitControl:
-    def __init__(self):
-        
-        
+    def __init__(self):      
         self.mode = 2
         self.on_off = 0
         self.fan_speed = 5
@@ -37,9 +35,30 @@ class UnitControl:
         self.unit_control_type = 8
 
 
+class Motor:
+    def __init__(self):
+        self.levels = [0] * 10  # initialize array with zeros
+
+    def set_level(self, motor_id, level):
+        self.levels[motor_id] = level
+
+    def get_level(self, motor_id):
+        return self.levels[motor_id]
+    
+class Activation:
+    def __init__(self):
+        self.timerState = 0  # in seconds
+        self.password = 0  # as a string
+        self.lockoutDay = 0  # as an integer representing the day of the week (0 = Monday, 1 = Tuesday, etc.)
+        self.remainingDay = 0
+
+
+
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM17', baudrate=115200, timeout=2)
+ser = serial.serial_for_url('COM6', baudrate=115200, timeout=2)
 unit_control = UnitControl()
+motor = Motor()
+activation = Activation()
 
 
 def pack_message(address: bytes, message_type: int, message_id: int, msg_data: bytes, sequence_number: bytes, uart_ack_byte: int) -> bytes:
@@ -52,8 +71,8 @@ def pack_message(address: bytes, message_type: int, message_id: int, msg_data: b
     return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crc_bytes_little_endian + b'\x7F'
 
 
-
-def handle_set_unit_control(data_bytes):
+#UnitControl
+def handle_set_unit_control(address,data_bytes,sequence_number):
     global unit_control
 
     unit_control.mode = data_bytes[0]
@@ -64,7 +83,15 @@ def handle_set_unit_control(data_bytes):
     unit_control.target_temp['val1'] = data_bytes[3]
     unit_control.target_temp['val2'] = data_bytes[4]
     unit_control.unit_control_type = data_bytes[7]
+    
+    message_type = 0x01
+    message_id = 0x04
+    ErrorCode = 0x00
 
+    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
 
 def handle_get_unit_control(address, sequence_number):
     global unit_control
@@ -87,15 +114,13 @@ def handle_get_unit_control(address, sequence_number):
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
 
-
 def handle_status_code_unit_control(error_code):
     print("Status Code Unit Control: Error")
-
 
 def handle_unit_control(address, message_id, data_bytes, sequence_number):
     if message_id.hex() == '01':
         print("Set Unit Control:")
-        handle_set_unit_control(data_bytes)
+        handle_set_unit_control(address,data_bytes,sequence_number)
     elif message_id.hex() == '03':
         print("Get Unit Control:")
         handle_get_unit_control(address, sequence_number)
@@ -105,9 +130,134 @@ def handle_unit_control(address, message_id, data_bytes, sequence_number):
     else:
         print("Unknown message Id:", message_id.hex())   
 
+
+#Motor
+def handle_set_motor_id(address, data_bytes, sequence_number):
+    global motor
+
+    motor_id = data_bytes[0]
+    level = data_bytes[1]
+
+    motor.set_level(motor_id, level)
+
+    message_type = 0x02
+    message_id = 0x04
+    ErrorCode = 0x00
+
+    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
+
+def handle_get_motor_id(address, sequence_number, data_bytes):
+    global motor
+    msg_data = bytearray()
+
+    msg_data.append(motor.get_level(data_bytes[0])) 
+
+    message_type = 0x04
+    message_id = 0x05
+
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
+
+def handle_get_motor_all(address, sequence_number):
+    global motor
+    msg_data = bytearray()
+
+    for level in motor.levels:
+        msg_data.append(level)
+
+    message_type = 0x04
+    message_id = 0x02
+
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
+
+def handle_status_code_motor(error_code):
+    print("Status Code Motor: Error")
+  
+def handle_motor(address, message_id, data_bytes, sequence_number):
+    if message_id.hex() == '01':
+        print("Set Motor ID:")
+        handle_set_motor_id(address, data_bytes, sequence_number)
+    elif message_id.hex() == '06':
+        print("Get Motor ID:")
+        handle_get_motor_id(address,data_bytes, sequence_number)
+    elif message_id.hex() == '03':
+        print("Get All Motors:")
+        handle_get_motor_all(address, sequence_number)
+    elif message_id.hex() == '04':
+        error_code = data_bytes[0]
+        handle_status_code_motor(error_code)
+    else:
+        print("Unknown message Id:", message_id.hex())   
+ 
+ 
+ 
+ 
+ 
+#Activation  
+def handle_set_activation(address, data_bytes, sequence_number):
+    global activation
+    
+    activation.timerState = int.from_bytes(data_bytes[:4], 'big')
+    password_int = int.from_bytes(data_bytes[1:3], 'litle')
+    password = str(password_int / 1000).replace('.', '')
+    activation.password = password
+    activation.lockoutDay = int.from_bytes(data_bytes[8:9], 'big')
+    activation.remainingDay = activation.lockoutDay
+    message_type = 0x02
+    message_id = 0x04
+    error_code = 0x00
+    
+    message = pack_message(address, message_type, message_id, error_code.to_bytes(1, 'big'), sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
+    
+def handle_get_activation(address, sequence_number):
+    global activation
+    
+    msg_data = bytearray()
+    msg_data += activation.timerState.to_bytes(1, 'big')
+    msg_data += activation.remainingDay.to_bytes(1, 'big')
+    
+    message_type = 0x02
+    message_id = 0x02
+    
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    ser.write(message)
+    hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+    print("send", hex_message)
+
+   
+        
+def handle_activation(address, message_id, data_bytes, sequence_number):
+    if message_id.hex() == '02':
+        print("Set Activation:")
+        handle_set_activation(address, data_bytes, sequence_number)
+    elif message_id.hex() == '03':
+        print("Get Activation:")
+        handle_get_activation(address, sequence_number)
+    else:
+        print("Unknown message Id:", message_id.hex())
+
+def handle_status_code_activation(error_code):
+    print("Status Code Activation: Error")
+
+
 def process_message(address_bytes, message_type, message_id, data_bytes, sequence_number):
     if message_type.hex() == '01':  # Unit Control
         handle_unit_control(address_bytes, message_id, data_bytes, sequence_number)
+    elif message_type.hex() == '04':
+        handle_motor(address_bytes, message_id, data_bytes, sequence_number)
+    elif message_type.hex() == '02':
+        handle_activation(address_bytes, message_id, data_bytes, sequence_number)
     else:
         print("Unknown message type:", message_type.hex())
 

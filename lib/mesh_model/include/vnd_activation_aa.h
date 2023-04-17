@@ -64,8 +64,8 @@ struct btMeshActivation {
 	// Added fields
 	uint8_t timerState;
 	uint16_t pwd;
-	uint32_t lockOutDay;
-	uint8_t seqNumber;
+	uint8_t lockOutDay;
+	uint8_t dayRemaining;
 };
 
 int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr, uint8_t seqNum);

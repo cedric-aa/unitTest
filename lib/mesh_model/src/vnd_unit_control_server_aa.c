@@ -24,26 +24,30 @@ static void sendUnitControlGetToCbUart()
 
 static void expiryUpdateTimer(struct k_timer *timer_id)
 {
-	sendUnitControlGetToCbUart();
+	//sendUnitControlGetToCbUart();
 	if (timer_id->status > 5) {
 		statusReceived = false;
-		LOG_ERR("unit control timer_id->status > 5 send Message Alert");
-		uint8_t buf[2] = { 0x03, 0x00 };
+		//LOG_ERR("unit control timer_id->status > 5 send Message Alert");
+		uint8_t buf[2] = { CB_CPU_NOT_RESPONDING, 0x00 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
 			false, 0x01ad, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
-		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
-		k_timer_stop(&updateTimer);
-		k_timer_start(&updateTimer, K_SECONDS(0), K_SECONDS(10));
+		//	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
+		//	k_timer_stop(&updateTimer);
+		//	k_timer_start(&updateTimer, K_SECONDS(0), K_SECONDS(10));
 	}
 }
 
 static void expirySetAckTimer(struct k_timer *timer_id)
 {
 	LOG_INF("unitControl set Ack Timeout");
-	uint8_t *seq = k_timer_user_data_get(&setAckTimer);
-	uint8_t buf[2] = { 0x01, *seq };
+	// Get the data pointer from the timer user data
+	uint8_t *data = (uint8_t *)k_timer_user_data_get(&setAckTimer);
+
+	uint16_t addr = ((uint16_t)data[2] << 8) | (uint16_t)data[1];
+	uint8_t buf[2] = { SET_TIMEOUT, data[0] };
+
 	dataQueueItemType publisherQueueItem = createPublisherQueueItem(
-		false, 0x01ad, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
+		false, addr, UNIT_CONTROL_TYPE, STATUS_CODE, buf, sizeof(buf));
 	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
 	k_timer_stop(&setAckTimer);
 }
@@ -115,7 +119,7 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 		(void)bt_mesh_model_send(unitControl->model, ctx, &msg, NULL, NULL);
 
 	} else {
-		sendUnitControlStatusCode(unitControl, ctx->addr, 0x04, seqNumber);
+		sendUnitControlStatusCode(unitControl, ctx->addr, WAITING_FOR_RESPONSE, seqNumber);
 	}
 
 	return 0;
@@ -192,11 +196,13 @@ static void unitControlFullCmdSet(uint16_t addr, uint8_t *buff, uint8_t len)
 	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
 	int ret = k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
 	if (!ret) {
-		static uint8_t sequenceNumber;
-		sequenceNumber = buff[len - 1];
+		uint8_t data[3];
+		data[0] = buff[len - 1]; // sequence number
+		data[1] = addr & 0xFF; // low byte of address
+		data[2] = addr >> 8; // high byte of address
 
-		k_timer_user_data_set(&setAckTimer, &sequenceNumber);
-		k_timer_start(&setAckTimer, K_SECONDS(10), K_FOREVER);
+		k_timer_user_data_set(&setAckTimer, &data);
+		k_timer_start(&setAckTimer, K_SECONDS(0), K_FOREVER);
 	}
 }
 
