@@ -196,8 +196,7 @@ static int handleStatusGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *
 	if (isUpdated) {
 		encodeStatus(model, ctx, buf->data[buf->len - 1]);
 	} else {
-		sendActivationStatusCode(activation, ctx->addr, WAITING_FOR_RESPONSE,
-					 buf->data[buf->len - 1]);
+		sendActivationStatusCode(activation, ctx->addr, WAITING_FOR_RESPONSE, buf->data[buf->len - 1]);
 		sendToCbUartActivationStatus();
 	}
 

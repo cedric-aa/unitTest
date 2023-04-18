@@ -8,5 +8,5 @@
 ### Setup Environment & Dependency (Windows)
 
 - run `py -m venv .venv`
-- activate the virtual environment by running `.\.venv\Script\activate`
+- activate the virtual environment by running `.\.venv\Scripts\activate`
 - install dependency `pip install -r requirements.txt`

@@ -19,8 +19,6 @@ LOG_MODULE_REGISTER(uart_AA, LOG_LEVEL_DBG);
 #define END_OF_FRAME_SIZE 3 // include crc1 + crc2 +  END_BYTE
 #define START_FRAME_SIZE 2 // include START_BYTE + LENGTH
 
-
-
 const struct device *uart = DEVICE_DT_GET(DT_NODELABEL(uart0));
 
 static uint8_t doubleBuffer[2][BUF_SIZE];
@@ -33,18 +31,14 @@ K_MSGQ_DEFINE(publisherQueue, sizeof(dataQueueItemType), 10, 4);
 
 enum uart_state_t { UART_STATE_IDLE, UART_STATE_RECEIVING, UART_STATE_RECEIVING_LEN };
 
-
-
-
- void forceEventReady(struct k_timer *timer_id)
+void forceEventReady(struct k_timer *timer_id)
 {
-	LOG_ERR("Timer fired");
-		uart_rx_disable(uart);
-		k_timer_stop(&missingByteWorkAround);
+	LOG_DBG("Timer exipred force RDX event");
+	uart_rx_disable(uart);
+	k_timer_stop(&missingByteWorkAround);
 }
 
 K_TIMER_DEFINE(missingByteWorkAround, forceEventReady, NULL);
-
 
 static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 {
@@ -96,7 +90,7 @@ static void uartStateMachine(uint8_t *buff, uint8_t buffLength)
 					       &message[START_FRAME_SIZE], payloadSize);
 					int err = k_msgq_put(&publisherQueue, &publisherQueueItem,
 							     K_NO_WAIT);
-								 k_timer_stop(&missingByteWorkAround);
+					k_timer_stop(&missingByteWorkAround);
 					if (err) {
 						LOG_ERR("UART message queue full, dropping data.");
 					}
@@ -154,7 +148,7 @@ void uartReceiveThread(void)
 	while (1) {
 		k_msgq_get(&uartMsgq, &uartReceiveQueueItem, K_FOREVER);
 
-		LOG_HEXDUMP_INF(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length,
+		LOG_HEXDUMP_DBG(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length,
 				"uart Receive Thread");
 
 		uartStateMachine(uartReceiveQueueItem.bufferItem, uartReceiveQueueItem.length);
@@ -168,13 +162,13 @@ void uartTxThread(void)
 	while (1) {
 		k_msgq_get(&uartTxQueue, &uartTxQueueItem, K_FOREVER);
 
-			LOG_HEXDUMP_INF(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
+		LOG_HEXDUMP_DBG(uartTxQueueItem.bufferItem, uartTxQueueItem.length,
 				"uart Tx Thread Thread");
 
 		framedDataWithCRC(&uartTxQueueItem);
 		memcpy(txBuffer, uartTxQueueItem.bufferItem, uartTxQueueItem.length);
 
-		LOG_HEXDUMP_INF(txBuffer, uartTxQueueItem.length, "buffer sent tx");
+		LOG_HEXDUMP_DBG(txBuffer, uartTxQueueItem.length, "buffer sent tx");
 
 		ret = uart_tx(uart, txBuffer, uartTxQueueItem.length, SYS_FOREVER_US);
 		k_msleep(10);
@@ -186,10 +180,10 @@ void uartTxThread(void)
 				k_msleep(5);
 				LOG_ERR("Error uart TX [%d]", ret);
 			} else {
-					LOG_INF("uart TX send Success");
+				LOG_DBG("uart TX send Success");
 			}
 		} else {
-			LOG_INF("uart TX send Success");
+			LOG_DBG("uart TX send Success");
 		}
 	}
 }
@@ -221,13 +215,13 @@ void uartHandler(const struct device *dev, struct uart_event *evt, void *user_da
 
 	switch (evt->type) {
 	case UART_TX_ABORTED:
-		LOG_ERR("UART_TX_ABORTED");
+		LOG_DBG("UART_TX_ABORTED");
 		break;
 	case UART_TX_DONE:
-			LOG_INF("UART_TX_DONE");
+		LOG_DBG("UART_TX_DONE");
 		break;
 	case UART_RX_RDY:
-		LOG_INF("UART_RX_RDY");
+		LOG_DBG("UART_RX_RDY");
 		uartReceiveQueueItem.length = evt->data.rx.len;
 		memcpy(uartReceiveQueueItem.bufferItem, evt->data.rx.buf + evt->data.rx.offset,
 		       uartReceiveQueueItem.length);
@@ -237,18 +231,18 @@ void uartHandler(const struct device *dev, struct uart_event *evt, void *user_da
 		}
 		break;
 	case UART_RX_BUF_REQUEST:
-		LOG_INF("UART_RX_BUF_REQUEST");
+		LOG_DBG("UART_RX_BUF_REQUEST");
 		nextBuf = (nextBuf == doubleBuffer[0]) ? doubleBuffer[1] : doubleBuffer[0];
 		err = uart_rx_buf_rsp(uart, nextBuf, BUF_SIZE);
 		__ASSERT(err == 0, "Failed to provide new buffer");
 		break;
 	case UART_RX_BUF_RELEASED:
-		LOG_INF("UART_RX_BUF_RELEASED");
-	
+		LOG_DBG("UART_RX_BUF_RELEASED");
+
 		break;
 	case UART_RX_DISABLED:
-		LOG_INF("UART_RX_DISABLED");
-		uart_rx_enable(uart, nextBuf, BUF_SIZE,RECEIVE_TIMEOUT);
+		LOG_DBG("UART_RX_DISABLED");
+		uart_rx_enable(uart, nextBuf, BUF_SIZE, RECEIVE_TIMEOUT);
 		break;
 	default:
 		break;

@@ -24,15 +24,15 @@ static void sendToCbUartMotorStatus()
 
 static void expiryMotorUpdateTimer(struct k_timer *timer_id)
 {
-	//sendToCbUartMotorStatus();
+	sendToCbUartMotorStatus();
 	if (timer_id->status > 5) {
-		//	LOG_ERR("timer_id->status > 5 send Message Alert");
+		LOG_ERR("timer_id->status > 5 send Message Alert");
 		uint8_t buf[2] = { CB_CPU_NOT_RESPONDING, 0x00 };
 		dataQueueItemType publisherQueueItem = createPublisherQueueItem(
 			false, 0x01ad, MOTOR_TYPE, STATUS_CODE, buf, sizeof(buf));
-		//	k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
-		//	k_timer_stop(&motorUpdateTimer);
-		//	k_timer_start(&motorUpdateTimer, K_SECONDS(0), K_SECONDS(20));
+		k_msgq_put(&publisherQueue, &publisherQueueItem, K_NO_WAIT);
+		k_timer_stop(&motorUpdateTimer);
+		k_timer_start(&motorUpdateTimer, K_SECONDS(20), K_SECONDS(20));
 	}
 }
 
@@ -40,7 +40,7 @@ static void expiryMotorSetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("SetAct Timeout");
 	uint8_t *data = (uint8_t *)k_timer_user_data_get(&motorSetAckTimer);
-	LOG_HEXDUMP_INF(data, 3, "debug ZC");
+	LOG_HEXDUMP_ERR(data, 3, "debug ZC");
 
 	uint16_t addr = ((uint16_t)data[2] << 8) | (uint16_t)data[1];
 	uint8_t buf[2] = { SET_TIMEOUT, data[0] };
@@ -57,6 +57,8 @@ K_TIMER_DEFINE(motorSetAckTimer, expiryMotorSetAckTimer, NULL);
 void motorUpdateStatus(struct btMeshMotor *motor, uint8_t *buf, size_t bufSize)
 {
 	updatereceived = true;
+	k_timer_stop(&motorUpdateTimer);
+	k_timer_start(&motorUpdateTimer, K_SECONDS(20), K_SECONDS(20));
 	LOG_INF("update Motor");
 
 	for (int i = 0; i < bufSize; i++) {
@@ -162,7 +164,7 @@ static int handleSet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	dataTimer[2] = ctx->addr >> 8; // high byte of address
 
 	k_timer_user_data_set(&motorSetAckTimer, &dataTimer);
-	k_timer_start(&motorSetAckTimer, K_SECONDS(0), K_FOREVER);
+	k_timer_start(&motorSetAckTimer, K_SECONDS(4), K_FOREVER);
 
 	if (motor->handlers->forwardToUart) {
 		motor->handlers->forwardToUart(false, ctx->addr, MOTOR_TYPE, SET, data,
@@ -237,7 +239,7 @@ static int btMeshMotorInit(struct bt_mesh_model *model)
 static int btMeshMotorStart(struct bt_mesh_model *model)
 {
 	LOG_DBG("Motor start");
-	k_timer_start(&motorUpdateTimer, K_SECONDS(1), K_SECONDS(10));
+	k_timer_start(&motorUpdateTimer, K_SECONDS(1), K_SECONDS(20));
 	return 0;
 }
 

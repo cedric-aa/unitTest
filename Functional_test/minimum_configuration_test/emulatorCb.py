@@ -27,12 +27,12 @@ class PrintLines(LineReader):
 
 class UnitControl:
     def __init__(self):      
-        self.mode = 2
+        self.mode = 0
         self.on_off = 0
-        self.fan_speed = 5
-        self.current_temp = {'val1': 4, 'val2': 5}
-        self.target_temp = {'val1': 6, 'val2': 7}
-        self.unit_control_type = 8
+        self.fan_speed = 0
+        self.current_temp = {'val1': 0, 'val2': 0}
+        self.target_temp = {'val1': 0, 'val2': 0}
+        self.unit_control_type = 0
 
 
 class Motor:
@@ -55,7 +55,7 @@ class Activation:
 
 
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM6', baudrate=115200, timeout=2)
+ser = serial.serial_for_url('COM6', baudrate=115200, timeout=0)
 unit_control = UnitControl()
 motor = Motor()
 activation = Activation()
@@ -65,10 +65,24 @@ def pack_message(address: bytes, message_type: int, message_id: int, msg_data: b
     uart_ack_byte = uart_ack_byte.to_bytes(1, 'big')
     message_type_byte = message_type.to_bytes(1, 'big')
     message_id_byte = message_id.to_bytes(1, 'big')
+    
     payload = uart_ack_byte + address + message_type_byte + message_id_byte + msg_data + sequence_number
     crc_bytes_little_endian = calculator.checksum(payload).to_bytes(2, 'little')
 
     return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crc_bytes_little_endian + b'\x7F'
+
+
+def pack_message1(address: bytes, message_type: int, message_id: int, ErrorCode: int, sequence_number: bytes, msg_data: bytes) -> bytes:
+    uart_ack_byte = b'\x00'
+    message_type_byte = message_type.to_bytes(1, 'big')
+    message_id_byte = message_id.to_bytes(1, 'big')
+    ErrorCode_byte = ErrorCode.to_bytes(1, 'big')
+
+    payload = uart_ack_byte + address + message_type_byte + message_id_byte + ErrorCode_byte + msg_data + sequence_number
+    crc_bytes_little_endian = calculator.checksum(payload).to_bytes(2, 'little')
+
+    return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crc_bytes_little_endian + b'\x7F'
+
 
 
 #UnitControl
@@ -87,8 +101,12 @@ def handle_set_unit_control(address,data_bytes,sequence_number):
     message_type = 0x01
     message_id = 0x04
     ErrorCode = 0x00
+    
+    message = pack_message1(address, message_type, message_id, ErrorCode, sequence_number, 0)
 
-    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number, 0)
+
+
+
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -109,7 +127,7 @@ def handle_get_unit_control(address, sequence_number):
     message_type = 0x01
     message_id = 0x02
 
-    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -144,7 +162,7 @@ def handle_set_motor_id(address, data_bytes, sequence_number):
     message_id = 0x04
     ErrorCode = 0x00
 
-    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -158,7 +176,7 @@ def handle_get_motor_id(address, sequence_number, data_bytes):
     message_type = 0x04
     message_id = 0x05
 
-    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -173,7 +191,7 @@ def handle_get_motor_all(address, sequence_number):
     message_type = 0x04
     message_id = 0x02
 
-    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -215,7 +233,7 @@ def handle_set_activation(address, data_bytes, sequence_number):
     message_id = 0x04
     error_code = 0x00
     
-    message = pack_message(address, message_type, message_id, error_code.to_bytes(1, 'big'), sequence_number, 0)
+    message = pack_message(address, message_type, message_id, error_code.to_bytes(1, 'big'), sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -230,7 +248,7 @@ def handle_get_activation(address, sequence_number):
     message_type = 0x02
     message_id = 0x02
     
-    message = pack_message(address, message_type, message_id, msg_data, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, msg_data, sequence_number,0 )
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -252,6 +270,7 @@ def handle_status_code_activation(error_code):
 
 
 def process_message(address_bytes, message_type, message_id, data_bytes, sequence_number):
+    
     if message_type.hex() == '01':  # Unit Control
         handle_unit_control(address_bytes, message_id, data_bytes, sequence_number)
     elif message_type.hex() == '04':
@@ -270,28 +289,53 @@ def reader():
             if start_byte == b'\x7E':
                 break
 
-        # Start byte found, read rest of message
+        # Start byte found, read length byte
         length_byte = ser.read(1)
         length = int.from_bytes(length_byte, 'big')
-        uart_ack = ser.read(1)
-        address_bytes = ser.read(2)
-        message_type = ser.read(1)
-        message_id = ser.read(1)
-        data_bytes = b''
-        if length > 6:
-            data_bytes = ser.read(length - 4)
-        sequence_number = ser.read(1)
-        crc_bytes = ser.read(2)
-        end_byte = ser.read(1)
+
+        # Read the entire message based on the length
+        message_bytes = ser.read(length + 3)  # +2 for end byte and CRC
+        end_byte = message_bytes[-1:]
 
         if end_byte != b'\x7F':
             print("Error: Invalid end byte")
+            print("Received end byte:", end_byte)
+            message = start_byte + length_byte + message_bytes
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("ERROR", hex_message)
         else:
-            message = (start_byte + length_byte + uart_ack + address_bytes[::-1] + message_type +
-                       message_id + data_bytes + sequence_number + crc_bytes + end_byte)
+            # Process the message
+            uart_ack = message_bytes[0:1]
+            address_bytes = message_bytes[1:3]
+            message_type = message_bytes[3:4]
+            message_id = message_bytes[4:5]
+            data_bytes = message_bytes[5:-4]  # Exclude sequence number, CRC, and end byte
+            sequence_number = message_bytes[-4:-3]
+            crc_bytes = message_bytes[-2:-1]
+
+
+            message = start_byte + length_byte + uart_ack + address_bytes[::-1] + message_type + message_id + data_bytes + sequence_number + crc_bytes + end_byte
             hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
             print("receive", hex_message)
+            message =  address_bytes[::-1] 
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("address_bytes", hex_message)
+            message =  message_type 
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("message_type", hex_message)
+            message =  message_id 
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("message_id", hex_message)
+            message =  data_bytes 
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("data_bytes", hex_message)
+            message =  sequence_number
+            hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
+            print("sequence_number", hex_message)
+            
+            
             process_message(address_bytes, message_type, message_id, data_bytes, sequence_number)
+
 
 
 serial_worker = threading.Thread(target=reader, daemon=True)

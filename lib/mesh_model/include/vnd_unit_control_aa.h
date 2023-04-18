@@ -86,6 +86,11 @@ struct btMeshUnitControl;
 			     BT_MESH_MODEL_USER_DATA(struct btMeshUnitControl, _unitControl),      \
 			     &btMeshUnitControlCb)
 
+struct btMeshUnitControlHandlers {
+	int (*const forwardToUart)(uint8_t uartAck, uint16_t addr, uint8_t messageType,
+				   uint8_t messageId, uint8_t *buf, uint8_t len);
+};
+
 /**
  * Bluetooth Mesh unitControl model context.
  */

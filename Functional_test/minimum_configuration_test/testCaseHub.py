@@ -196,14 +196,16 @@ def reader():
             response_queue.put(message)
 
 def sender():
-    sequence_number = 0  # Initialize sequence number
+    sequence_number = 1  # Initialize sequence number
     while True:
         for test_case in test_cases:
             if sequence_number > 255:
                 sequence_number = 0
             run_test_case(test_case,sequence_number)
             sequence_number = sequence_number + 1
-            time.sleep(0)
+            time.sleep(10)
+        time.sleep(120)
+            
                 
                  
                 

@@ -10,13 +10,6 @@
 
 #include "vnd_unit_control_aa.h"
 
-/** Bluetooth Mesh unitControl model handlers. */
-struct btMeshUnitControlHandlers {
-	void (*const fullCmd)(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8_t len);
-	void (*const statusCode)(struct btMeshUnitControl *unitControl, struct bt_mesh_msg_ctx *ctx,
-				 uint8_t statusCode, uint8_t sequenceNumber);
-};
-
 int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t addr,
 			      uint8_t seqNumber);
 int sendUnitControlFullCmdSet(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize,
