@@ -64,8 +64,8 @@ static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
 	bt_mesh_model_msg_init(buf, opcode);
 
 	// Add all of the parameters to the buffer.
-	net_buf_simple_add_u8(buf, unitControl->mode);
 	net_buf_simple_add_u8(buf, unitControl->onOff);
+	net_buf_simple_add_u8(buf, unitControl->mode);
 	net_buf_simple_add_u8(buf, unitControl->fanSpeed);
 	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.integerPart);
 	net_buf_simple_add_u8(buf, unitControl->tempValues.currentTemp.fractionalPart);
@@ -73,6 +73,8 @@ static void encodeFullCmd(struct net_buf_simple *buf, uint32_t opcode,
 	net_buf_simple_add_u8(buf, unitControl->tempValues.targetTemp.fractionalPart);
 	net_buf_simple_add_u8(buf, unitControl->unitControlType);
 	net_buf_simple_add_u8(buf, seqNumber);
+
+
 }
 
 void sendUnitControlStatusCode(struct btMeshUnitControl *unitControl, uint16_t addr,
@@ -107,14 +109,22 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 {
 	LOG_INF("Received [unitControl][GET] from 0x%04x rssi:%d sequenceNumber:%d", ctx->addr,
 		ctx->recv_rssi, buf->data[buf->len - 1]);
-
+	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
 	struct btMeshUnitControl *unitControl = model->user_data;
 	BT_MESH_MODEL_BUF_DEFINE(msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE,
 				 BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_LEN_MESSAGE);
-	uint8_t seqNumber = net_buf_simple_pull_u8(buf);
-	encodeFullCmd(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, unitControl, seqNumber);
+	
+	
 
 	if (statusReceived) {
+
+		encodeFullCmd(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, unitControl, seqNumber);
+
+			LOG_HEXDUMP_DBG(msg.data, msg.len,
+				"zcccccccccccc122");
+			LOG_HEXDUMP_DBG(&msg.data, msg.len,
+				"zcccccccccccc122");
+
 		if (!bt_mesh_model_send(unitControl->model, ctx, &msg, NULL, NULL)) {
 			LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
 				seqNumber);
@@ -213,9 +223,12 @@ const struct btMeshUnitControlHandlers unitControlHandlers = {
 
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize)
 {
+	LOG_HEXDUMP_DBG(buf, bufSize,
+				"zc");
 	statusReceived = true;
-	unitControl->mode = buf[0];
-	unitControl->onOff = buf[1];
+	
+	unitControl->onOff = buf[0];
+	unitControl->mode = buf[1];
 	unitControl->fanSpeed = buf[2];
 	unitControl->tempValues.currentTemp.integerPart = buf[3];
 	unitControl->tempValues.currentTemp.fractionalPart = buf[4];
@@ -224,5 +237,5 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 	unitControl->unitControlType = buf[7];
 	k_timer_stop(&updateTimer);
 	k_timer_start(&updateTimer, K_SECONDS(20), K_SECONDS(20));
-	printClientStatus(unitControl);
+	//printClientStatus(unitControl);
 }

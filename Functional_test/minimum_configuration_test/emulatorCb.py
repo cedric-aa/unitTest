@@ -55,7 +55,7 @@ class Activation:
 
 
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM6', baudrate=115200, timeout=0)
+ser = serial.serial_for_url('COM4', baudrate=115200, timeout=0)
 unit_control = UnitControl()
 motor = Motor()
 activation = Activation()
@@ -72,37 +72,27 @@ def pack_message(address: bytes, message_type: int, message_id: int, msg_data: b
     return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crc_bytes_little_endian + b'\x7F'
 
 
-def pack_message1(address: bytes, message_type: int, message_id: int, ErrorCode: int, sequence_number: bytes, msg_data: bytes) -> bytes:
-    uart_ack_byte = b'\x00'
-    message_type_byte = message_type.to_bytes(1, 'big')
-    message_id_byte = message_id.to_bytes(1, 'big')
-    ErrorCode_byte = ErrorCode.to_bytes(1, 'big')
-
-    payload = uart_ack_byte + address + message_type_byte + message_id_byte + ErrorCode_byte + msg_data + sequence_number
-    crc_bytes_little_endian = calculator.checksum(payload).to_bytes(2, 'little')
-
-    return b'\x7E' + len(payload).to_bytes(1, 'big') + payload + crc_bytes_little_endian + b'\x7F'
-
-
 
 #UnitControl
 def handle_set_unit_control(address,data_bytes,sequence_number):
-    global unit_control
+
 
     unit_control.mode = data_bytes[0]
     unit_control.on_off = data_bytes[1]
     unit_control.fan_speed = data_bytes[2]
     unit_control.current_temp['val1'] = data_bytes[3]
     unit_control.current_temp['val2'] = data_bytes[4]
-    unit_control.target_temp['val1'] = data_bytes[3]
-    unit_control.target_temp['val2'] = data_bytes[4]
+    unit_control.target_temp['val1'] = data_bytes[5]
+    unit_control.target_temp['val2'] = data_bytes[6]
     unit_control.unit_control_type = data_bytes[7]
     
     message_type = 0x01
     message_id = 0x04
     ErrorCode = 0x00
     
-    message = pack_message1(address, message_type, message_id, ErrorCode, sequence_number, 0)
+    message = pack_message(address, message_type, message_id, ErrorCode.to_bytes(1, 'big'), sequence_number, 0)
+
+    
 
 
 
@@ -112,7 +102,6 @@ def handle_set_unit_control(address,data_bytes,sequence_number):
     print("send", hex_message)
 
 def handle_get_unit_control(address, sequence_number):
-    global unit_control
     msg_data = bytearray()
 
     msg_data.append(unit_control.mode)
@@ -151,18 +140,17 @@ def handle_unit_control(address, message_id, data_bytes, sequence_number):
 
 #Motor
 def handle_set_motor_id(address, data_bytes, sequence_number):
-    global motor
 
     motor_id = data_bytes[0]
     level = data_bytes[1]
 
     motor.set_level(motor_id, level)
 
-    message_type = 0x02
+    message_type = 0x04
     message_id = 0x04
     ErrorCode = 0x00
 
-    message = pack_message(address, message_type, message_id, ErrorCode, sequence_number,0 )
+    message = pack_message(address, message_type, message_id, ErrorCode.to_bytes(1, 'big'), sequence_number, 0)
     ser.write(message)
     hex_message = ' '.join(['0x' + byte.to_bytes(1, 'big').hex() for byte in message])
     print("send", hex_message)
@@ -221,17 +209,24 @@ def handle_motor(address, message_id, data_bytes, sequence_number):
  
 #Activation  
 def handle_set_activation(address, data_bytes, sequence_number):
-    global activation
     
-    activation.timerState = int.from_bytes(data_bytes[:4], 'big')
-    password_int = int.from_bytes(data_bytes[1:3], 'litle')
-    password = str(password_int / 1000).replace('.', '')
+    
+    activation.timerState = data_bytes[0],
+    password_int = data_bytes[1:3]
+    password = str(int.from_bytes(password_int, byteorder='big') / 1000).replace('.', '')
     activation.password = password
-    activation.lockoutDay = int.from_bytes(data_bytes[8:9], 'big')
+    activation.lockoutDay = data_bytes[3]
     activation.remainingDay = activation.lockoutDay
     message_type = 0x02
     message_id = 0x04
     error_code = 0x00
+    print("timerState ", activation.timerState)
+    print("password ",activation.password)
+    print("lockoutDay ",activation.lockoutDay )
+    print("remainingDay " ,activation.remainingDay)
+    
+    
+    
     
     message = pack_message(address, message_type, message_id, error_code.to_bytes(1, 'big'), sequence_number,0 )
     ser.write(message)
@@ -239,11 +234,12 @@ def handle_set_activation(address, data_bytes, sequence_number):
     print("send", hex_message)
     
 def handle_get_activation(address, sequence_number):
-    global activation
+    
     
     msg_data = bytearray()
-    msg_data += activation.timerState.to_bytes(1, 'big')
-    msg_data += activation.remainingDay.to_bytes(1, 'big')
+
+    msg_data.append(activation.timerState[0]) # append the first element of the tuple
+    msg_data.append(activation.remainingDay)
     
     message_type = 0x02
     message_id = 0x02
@@ -256,7 +252,7 @@ def handle_get_activation(address, sequence_number):
    
         
 def handle_activation(address, message_id, data_bytes, sequence_number):
-    if message_id.hex() == '02':
+    if message_id.hex() == '01':
         print("Set Activation:")
         handle_set_activation(address, data_bytes, sequence_number)
     elif message_id.hex() == '03':

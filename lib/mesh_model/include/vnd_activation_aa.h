@@ -25,7 +25,7 @@
 /*OpCode Len*/
 #define BT_MESH_MODEL_ACTIVATION_OP_LEN_GET 1
 #define BT_MESH_MODEL_ACTIVATION_OP_LEN_SET 5
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 6
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 3
 #define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS_CODE 2
 
 /* Forward declaration of the Bluetooth Mesh Activation model context. */

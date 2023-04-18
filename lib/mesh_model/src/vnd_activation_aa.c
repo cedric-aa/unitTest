@@ -74,6 +74,7 @@ static int encodeStatus(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_ACTIVATION_OP_STATUS);
 	net_buf_simple_add_u8(&msg, activation->timerState);
 	net_buf_simple_add_u8(&msg, activation->dayRemaining);
+	net_buf_simple_add_u8(&msg, seqNumber);
 
 	if (!bt_mesh_model_send(activation->model, ctx, &msg, NULL, NULL)) {
 		LOG_INF("Send [ACTIVATION_TYPE][STATUS] to 0x%04x. sequenceNumber:%d ", ctx->addr,
@@ -139,15 +140,12 @@ static int handleSetPwd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx
 
 	struct btMeshActivation *activation = model->user_data;
 
-	//testing removed it after
-	sendActivationStatusCode(activation, ctx->addr, WAITING_FOR_RESPONSE,
-				 buf->data[buf->len - 1]);
 
 	if (activation->handlers->forwardToUart) {
 		activation->handlers->forwardToUart(false, ctx->addr, ACTIVATION_TYPE, SET,
 						    buf->data, buf->len);
 	}
-
+	sendToCbUartActivationStatus();
 	return 0;
 }
 

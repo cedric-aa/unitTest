@@ -62,8 +62,13 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	uint8_t data[buf->len];
 	memcpy(data, buf->data, buf->len);
 
-	unitControl->mode = net_buf_simple_pull_u8(buf);
+	LOG_HEXDUMP_DBG(data, buf->len,
+				"zc1");
+	LOG_HEXDUMP_DBG(buf->data, buf->len,
+				"zc2");
+
 	unitControl->onOff = net_buf_simple_pull_u8(buf);
+	unitControl->mode = net_buf_simple_pull_u8(buf);
 	unitControl->fanSpeed = net_buf_simple_pull_u8(buf);
 	unitControl->tempValues.currentTemp.integerPart = net_buf_simple_pull_u8(buf);
 	unitControl->tempValues.currentTemp.fractionalPart = net_buf_simple_pull_u8(buf);
