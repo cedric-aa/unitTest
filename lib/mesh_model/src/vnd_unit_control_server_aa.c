@@ -120,10 +120,7 @@ static int handleFullCmdGet(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 
 		encodeFullCmd(&msg, BT_MESH_MODEL_UNIT_CONTROL_FULL_CMD_OP_MESSAGE, unitControl, seqNumber);
 
-			LOG_HEXDUMP_DBG(msg.data, msg.len,
-				"zcccccccccccc122");
-			LOG_HEXDUMP_DBG(&msg.data, msg.len,
-				"zcccccccccccc122");
+	
 
 		if (!bt_mesh_model_send(unitControl->model, ctx, &msg, NULL, NULL)) {
 			LOG_INF("Send [unitControl][STATUS] to 0x%04x sequenceNumber:%d", ctx->addr,
@@ -223,8 +220,6 @@ const struct btMeshUnitControlHandlers unitControlHandlers = {
 
 void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf, size_t bufSize)
 {
-	LOG_HEXDUMP_DBG(buf, bufSize,
-				"zc");
 	statusReceived = true;
 	
 	unitControl->onOff = buf[0];
@@ -237,5 +232,5 @@ void unitControlUpdateStatus(struct btMeshUnitControl *unitControl, uint8_t *buf
 	unitControl->unitControlType = buf[7];
 	k_timer_stop(&updateTimer);
 	k_timer_start(&updateTimer, K_SECONDS(20), K_SECONDS(20));
-	//printClientStatus(unitControl);
+	printClientStatus(unitControl);
 }

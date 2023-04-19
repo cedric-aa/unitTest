@@ -40,7 +40,7 @@ static void expiryMotorSetAckTimer(struct k_timer *timer_id)
 {
 	LOG_DBG("SetAct Timeout");
 	uint8_t *data = (uint8_t *)k_timer_user_data_get(&motorSetAckTimer);
-	LOG_HEXDUMP_ERR(data, 3, "debug ZC");
+
 
 	uint16_t addr = ((uint16_t)data[2] << 8) | (uint16_t)data[1];
 	uint8_t buf[2] = { SET_TIMEOUT, data[0] };
@@ -59,7 +59,6 @@ void motorUpdateStatus(struct btMeshMotor *motor, uint8_t *buf, size_t bufSize)
 	updatereceived = true;
 	k_timer_stop(&motorUpdateTimer);
 	k_timer_start(&motorUpdateTimer, K_SECONDS(20), K_SECONDS(20));
-	LOG_INF("update Motor");
 
 	for (int i = 0; i < bufSize; i++) {
 		motor->motorLevel[i] = buf[i];

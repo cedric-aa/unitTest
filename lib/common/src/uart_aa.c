@@ -7,7 +7,7 @@
 #include "message_format_aa.h"
 #include <stdlib.h>
 
-LOG_MODULE_REGISTER(uart_AA, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(uart_AA, LOG_LEVEL_INF);
 
 #define THREAD_UART_STACKSIZE 2048
 #define THREAD_UART_PRIORITY 14

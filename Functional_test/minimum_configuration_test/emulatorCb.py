@@ -47,10 +47,10 @@ class Motor:
     
 class Activation:
     def __init__(self):
-        self.status = 0  # in seconds
+        self.status = 0x00  # in seconds
         self.password = 0  # as a string
-        self.lockoutDay = 0  # as an integer representing the day of the week (0 = Monday, 1 = Tuesday, etc.)
-        self.remainingDay = 0
+        self.lockoutDay = 0x00 # as an integer representing the day of the week (0 = Monday, 1 = Tuesday, etc.)
+        self.remainingDay = 0x00
 
 
 
@@ -211,11 +211,11 @@ def handle_motor(address, message_id, data_bytes, sequence_number):
 def handle_set_activation(address, data_bytes, sequence_number):
     
     
-    activation.status = data_bytes[0],
+    activation.status = data_bytes[0:1]
     password_int = data_bytes[1:3]
     password = str(int.from_bytes(password_int, byteorder='big') / 1000).replace('.', '')
     activation.password = password
-    activation.lockoutDay = data_bytes[3]
+    activation.lockoutDay = data_bytes[3:4]
     activation.remainingDay = activation.lockoutDay
     message_type = 0x02
     message_id = 0x04
@@ -238,8 +238,8 @@ def handle_get_activation(address, sequence_number):
     
     msg_data = bytearray()
 
-    msg_data.append(activation.status[0])
-    msg_data.append(activation.remainingDay)
+    msg_data += activation.status
+    msg_data += activation.remainingDay
     
     message_type = 0x02
     message_id = 0x02
