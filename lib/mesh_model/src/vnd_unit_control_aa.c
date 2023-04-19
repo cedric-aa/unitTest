@@ -3,7 +3,7 @@
 #include <zephyr/logging/log.h>
 #include "message_format_aa.h"
 
-LOG_MODULE_REGISTER(vnd_unit_control_aa, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(vnd_unit_control_aa, LOG_LEVEL_INF);
 
 static const uint8_t *modeToString[] = {
 	[UNIT_CONTROL_MODE_COOL] = "cool mode", [UNIT_CONTROL_MODE_HEAT] = "heat mode",

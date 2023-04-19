@@ -47,7 +47,7 @@ class Motor:
     
 class Activation:
     def __init__(self):
-        self.timerState = 0  # in seconds
+        self.status = 0  # in seconds
         self.password = 0  # as a string
         self.lockoutDay = 0  # as an integer representing the day of the week (0 = Monday, 1 = Tuesday, etc.)
         self.remainingDay = 0
@@ -55,7 +55,7 @@ class Activation:
 
 
 calculator = Calculator(Crc16.CCITT)
-ser = serial.serial_for_url('COM4', baudrate=115200, timeout=0)
+ser = serial.serial_for_url('COM6', baudrate=115200, timeout=0)
 unit_control = UnitControl()
 motor = Motor()
 activation = Activation()
@@ -211,7 +211,7 @@ def handle_motor(address, message_id, data_bytes, sequence_number):
 def handle_set_activation(address, data_bytes, sequence_number):
     
     
-    activation.timerState = data_bytes[0],
+    activation.status = data_bytes[0],
     password_int = data_bytes[1:3]
     password = str(int.from_bytes(password_int, byteorder='big') / 1000).replace('.', '')
     activation.password = password
@@ -220,7 +220,7 @@ def handle_set_activation(address, data_bytes, sequence_number):
     message_type = 0x02
     message_id = 0x04
     error_code = 0x00
-    print("timerState ", activation.timerState)
+    print("state ", activation.status)
     print("password ",activation.password)
     print("lockoutDay ",activation.lockoutDay )
     print("remainingDay " ,activation.remainingDay)
@@ -238,7 +238,7 @@ def handle_get_activation(address, sequence_number):
     
     msg_data = bytearray()
 
-    msg_data.append(activation.timerState[0]) # append the first element of the tuple
+    msg_data.append(activation.status[0])
     msg_data.append(activation.remainingDay)
     
     message_type = 0x02
