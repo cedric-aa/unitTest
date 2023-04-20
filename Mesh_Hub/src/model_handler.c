@@ -45,8 +45,8 @@ void publisherThread(void)
 	while (1) {
 		k_msgq_get(&publisherQueue, &publisherQueueItem, K_FOREVER);
 
-		//LOG_HEXDUMP_INF(publisherQueueItem.bufferItem, publisherQueueItem.length,
-		//		"Hub Publisher Thread");
+		LOG_HEXDUMP_DBG(publisherQueueItem.bufferItem, publisherQueueItem.length,
+				"Hub Publisher Thread");
 
 		processedMessage processedMessage = processPublisherQueueItem(&publisherQueueItem);
 
@@ -115,8 +115,7 @@ void publisherThread(void)
 		}
 		if (processedMessage.isUartAck) {
 			// TODO processing uartAck here
-		
-		}
+				}
 	}
 }
 

@@ -4,7 +4,16 @@
 #include <stdint.h>
 #include <string.h>
 
+//ErrorCode
+#define WAITING_FOR_RESPONSE 0x04
+#define SET_OPERATION_SUCCESS 0x00
+#define SET_TIMEOUT 0x01
+#define CB_CPU_NOT_RESPONDING 0x03
+
+
+
 enum messageType { UNIT_CONTROL_TYPE = 1, ACTIVATION_TYPE = 2, SENSOR_TYPE = 3, MOTOR_TYPE = 4 };
+
 
 enum messageId {
 	SET = 1,
@@ -14,6 +23,11 @@ enum messageId {
 	STATUS_ID = 5,
 	GET_ID = 6,
 };
+
+
+
+
+
 
 typedef struct {
 	bool isUartAck;

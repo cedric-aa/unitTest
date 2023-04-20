@@ -6,7 +6,7 @@
 #include "uart_aa.h"
 #include "message_format_aa.h"
 
-LOG_MODULE_REGISTER(vnd_unit_control_client_aa, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(vnd_unit_control_client_aa, LOG_LEVEL_INF);
 
 int sendUnitControlFullCmdGet(struct btMeshUnitControl *unitControl, uint16_t addr,
 			      uint8_t seqNumber)
@@ -59,13 +59,11 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 		ctx->recv_rssi, buf->data[buf->len - 1]);
 
 	struct btMeshUnitControl *unitControl = model->user_data;
+	uint8_t data[buf->len];
+	memcpy(data, buf->data, buf->len);
 
-	uint8_t buff[buf->len];
-	uint8_t len = buf->len;
-	memcpy(buff, buf->data, len);
-
-	unitControl->mode = net_buf_simple_pull_u8(buf);
 	unitControl->onOff = net_buf_simple_pull_u8(buf);
+	unitControl->mode = net_buf_simple_pull_u8(buf);
 	unitControl->fanSpeed = net_buf_simple_pull_u8(buf);
 	unitControl->tempValues.currentTemp.integerPart = net_buf_simple_pull_u8(buf);
 	unitControl->tempValues.currentTemp.fractionalPart = net_buf_simple_pull_u8(buf);
@@ -75,8 +73,9 @@ static int handleFullCmd(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ct
 	//	uint8_t sequenceNumber = net_buf_simple_pull_u8(buf);
 	printClientStatus(unitControl);
 
-	if (unitControl->handlers->fullCmd) {
-		unitControl->handlers->fullCmd(ctx, buff, len);
+	if (unitControl->handlers->forwardToUart) {
+		unitControl->handlers->forwardToUart(false, ctx->addr, UNIT_CONTROL_TYPE, STATUS,
+						     data, sizeof(data));
 	}
 
 	return 0;
@@ -87,13 +86,14 @@ static int handleStatusCode(struct bt_mesh_model *model, struct bt_mesh_msg_ctx 
 {
 	LOG_INF("Received [unitControl][STATUS_CODE] from addr:0x%04x. rssi:%d sequenceNumber:%d ",
 		ctx->addr, ctx->recv_rssi, buf->data[buf->len - 1]);
+
 	struct btMeshUnitControl *unitControl = model->user_data;
+	uint8_t data[buf->len];
+	memcpy(data, buf->data, buf->len);
 
-	uint8_t status = net_buf_simple_pull_u8(buf);
-	uint8_t sequenceNumber = net_buf_simple_pull_u8(buf);
-
-	if (unitControl->handlers->statusCode) {
-		unitControl->handlers->statusCode(unitControl, ctx, status, sequenceNumber);
+	if (unitControl->handlers->forwardToUart) {
+		unitControl->handlers->forwardToUart(false, ctx->addr, UNIT_CONTROL_TYPE,
+						     STATUS_CODE, data, sizeof(data));
 	}
 
 	return 0;
@@ -125,28 +125,6 @@ const struct bt_mesh_model_cb btMeshUnitControlCb = {
 	.init = btMeshUnitControlInit,
 };
 
-static void unitControlFullCmd(struct bt_mesh_msg_ctx *ctx, uint8_t *buff, uint8_t len)
-{
-	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS, false);
-	formatUartEncodeFullCmd(&uartTxQueueItem, buff, len);
-
-	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
-}
-
-static void unitControlHandleSatusCode(struct btMeshUnitControl *unitControl,
-				       struct bt_mesh_msg_ctx *ctx, uint8_t statusCode,
-				       uint8_t sequenceNumber)
-{
-	dataQueueItemType uartTxQueueItem =
-		headerFormatUartTx(ctx->addr, UNIT_CONTROL_TYPE, STATUS_CODE, false);
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = statusCode; // status
-	uartTxQueueItem.bufferItem[uartTxQueueItem.length++] = sequenceNumber; // status
-	uartTxQueueItem.bufferItem[0] = uartTxQueueItem.length - 1; // update lenghtpayload
-	k_msgq_put(&uartTxQueue, &uartTxQueueItem, K_NO_WAIT);
-}
-
 const struct btMeshUnitControlHandlers unitControlHandlers = {
-	.fullCmd = unitControlFullCmd,
-	.statusCode = unitControlHandleSatusCode,
+	.forwardToUart = forwardToUart,
 };

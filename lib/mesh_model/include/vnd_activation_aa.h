@@ -24,8 +24,8 @@
 
 /*OpCode Len*/
 #define BT_MESH_MODEL_ACTIVATION_OP_LEN_GET 1
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_SET 4
-#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 6
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_SET 5
+#define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS 3
 #define BT_MESH_MODEL_ACTIVATION_OP_LEN_STATUS_CODE 2
 
 /* Forward declaration of the Bluetooth Mesh Activation model context. */
@@ -64,8 +64,8 @@ struct btMeshActivation {
 	// Added fields
 	uint8_t timerState;
 	uint16_t pwd;
-	uint32_t lockOutDay;
-	uint8_t seqNumber;
+	uint8_t lockOutDay;
+	uint8_t dayRemaining;
 };
 
 int sendActivationGetStatus(struct btMeshActivation *activation, uint16_t addr, uint8_t seqNum);
