@@ -1,13 +1,14 @@
-name: Build
+name: Build and Test
 
 on: [push, pull_request]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     container: zephyrprojectrtos/ci:latest
     env:
       CMAKE_PREFIX_PATH: /opt/toolchains
+
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -19,30 +20,35 @@ jobs:
         run: |
           west init -l .
           west update
+
       - name: Build firmware
         working-directory: example-application
         run: |
           west build -b custom_plank app
-      
+
       - name: Install Ruby
         run: |
           sudo apt-get update
           sudo apt-get install -y ruby
 
-      
-      - name: Twister Tests
+      - name: Run tests with Twister
         working-directory: example-application
         run: |
           ../zephyr/scripts/twister -G --board-root boards/ --testsuite-root ./tests/
-      
+
       - name: Display Twister JSON report
         run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
-      - name: Display Twister xunit report 1
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.xml
+      - name: Create check run for Twister report
+        uses: peter-evans/create-check@v1.3.0
+        with:
+          name: Twister Test Results
+          conclusion: success
+          text: |
+            ## Twister Test Results
 
-      - name: Display Twister xunit report 2
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister_report.xml
+            See the test report for more details.
+          annotations_file: /__w/unitTest/unitTest/example-application/twister-out/twister_report.xml
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
