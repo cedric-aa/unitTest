@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           source ${{ env.ZEPHYR_BASE }}/zephyr-env.sh
-          west build -b custom_plank --board-root ../boards app
+          west build -b custom_plank --board-root boards app
 
       - name: Twister Tests
         working-directory: example-application
