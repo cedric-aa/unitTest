@@ -48,9 +48,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3
 
+      - name: Set execute permission for display_results.py
+        run: chmod +x .github/workflows/display_results.py
+
       - name: Display test results in a readable format
-        run: |
-          python3 .github/workflows/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
+        run: python3 .github/workflows/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
