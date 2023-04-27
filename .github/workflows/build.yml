@@ -34,9 +34,9 @@ jobs:
         working-directory: example-application
         run: |
           ../zephyr/scripts/twister -G --board-root boards/ --testsuite-root ./tests/
-      - name: Display build.log
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/native_posix/unity/example_test/unity.example_test/build.log
-        if: always()
+      
+      - name: Display Twister JSON report
+        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
