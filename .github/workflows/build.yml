@@ -38,6 +38,12 @@ jobs:
       - name: Display Twister JSON report
         run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
+      - name: Display Twister xunit report 1
+        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.xml
+
+      - name: Display Twister xunit report 2
+        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister_report.xml
+
       - name: Archive firmware
         uses: actions/upload-artifact@v2
         with:
