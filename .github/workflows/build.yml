@@ -8,12 +8,18 @@ jobs:
     container: zephyrprojectrtos/ci:latest
     env:
       CMAKE_PREFIX_PATH: /opt/toolchains
-      ZEPHYR_BASE: /opt/workspace/zephyr  
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           path: example-application
+
+      - name: Clone zephyr repository
+        run: |
+          git clone --depth 1 --branch v2.7.0 https://github.com/zephyrproject-rtos/zephyr.git /opt/zephyrproject/zephyr
+
+      - name: Set ZEPHYR_BASE environment variable
+        run: echo "ZEPHYR_BASE=/opt/zephyrproject/zephyr" >> $GITHUB_ENV
 
       - name: Initialize
         working-directory: example-application
@@ -23,10 +29,10 @@ jobs:
 
       - name: Build firmware
         working-directory: example-application
-        shell: bash  # Add this line
+        shell: bash
         run: |
-            source ${{ env.ZEPHYR_BASE }}/zephyr-env.sh
-            west build -b custom_plank app
+          source ${{ env.ZEPHYR_BASE }}/zephyr-env.sh
+          west build -b custom_plank app
 
       - name: Twister Tests
         working-directory: example-application
