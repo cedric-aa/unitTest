@@ -40,18 +40,73 @@ jobs:
         run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Create check run for Twister report
-        uses: peter-evans/create-check@v1.3.0
+        uses: actions/github-script@4.3.1
         with:
-          name: Twister Test Results
-          conclusion: success
-          text: |
-            ## Twister Test Results
+          script: |
+            const fs = require('fs');
+            const xml2js = require('xml2js');
+            const parser = new xml2js.Parser();
+            const resultsFile = '/__w/unitTest/unitTest/example-application/twister-out/twister_report.xml';
+            const resultsXml = fs.readFileSync(resultsFile);
+            let results = null;
 
-            See the test report for more details.
-          annotations_file: /__w/unitTest/unitTest/example-application/twister-out/twister_report.xml
+            parser.parseString(resultsXml, function (err, result) {
+              if (err) {
+                console.error(err);
+                process.exit(1);
+              }
+
+              results = result.testsuites.testsuite.map(suite => {
+                const name = suite.$.name;
+                const cases = suite.testcase.map(testcase => ({
+                  name: testcase.$.name,
+                  status: testcase.skipped ? 'skipped' : testcase.failure ? 'failed' : 'passed',
+                  message: testcase.skipped ? 'Test skipped' : testcase.failure[0].$.message,
+                  file: testcase.$.classname,
+                  line: testcase.failure ? testcase.failure[0].$.line : undefined
+                }));
+
+                return { name, cases };
+              });
+            });
+
+            const output = {
+              title: 'Twister Test Results',
+              summary: 'See the test report for more details.',
+              annotations: []
+            };
+
+            results.forEach(suite => {
+              suite.cases.forEach(testcase => {
+                const status = testcase.status === 'skipped' ? 'neutral' : testcase.status === 'failed' ? 'failure' : 'success';
+                const annotation = {
+                  path: testcase.file,
+                  start_line: testcase.line,
+                  end_line: testcase.line,
+                  annotation_level: status,
+                  message: testcase.message,
+                  title: `${testcase.name} (${suite.name})`
+                };
+                output.annotations.push(annotation);
+              });
+            });
+
+            await github.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Twister Test Results',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: results.some(suite => suite.cases.some(testcase => testcase.status === 'failed'))
+                ? 'failure'
+                : 'success',
+              output: output
+            });
+
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
         with:
           name: firmware
-          path: example-application/build/zephyr/zephyr.*
+          path: example-application/build/zephyr
