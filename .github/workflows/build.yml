@@ -24,6 +24,7 @@ jobs:
       - name: Build firmware
         working-directory: example-application
         run: |
+          source ${{ env.ZEPHYR_BASE }}/zephyr-env.sh
           west build -b custom_plank app
 
       - name: Twister Tests
