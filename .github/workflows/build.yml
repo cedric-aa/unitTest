@@ -22,8 +22,7 @@ jobs:
       - name: Build firmware
         working-directory: example-application
         run: |
-          west build -b custom_plank apps/app
-          west build -b custom_plank apps/NewApp
+          west build -b custom_plank app
       
       - name: Install Ruby
         run: |
