@@ -22,7 +22,8 @@ jobs:
       - name: Build firmware
         working-directory: example-application
         run: |
-          west build -b custom_plank app
+          west build -b custom_plank apps/app
+          west build -b custom_plank apps/NewApp
       
       - name: Install Ruby
         run: |
@@ -34,25 +35,16 @@ jobs:
         run: |
           ../zephyr/scripts/twister -G --board-root boards/ --testsuite-root ./tests/
       
-      - name: Display Twister JSON report
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.json
-
-      - name: Display Twister xunit report 1
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister.xml
-
-      - name: Display Twister xunit report 2
-        run: cat /__w/unitTest/unitTest/example-application/twister-out/twister_report.xml
-
       - name: Install Python
         run: |
           sudo apt-get update
           sudo apt-get install -y python3
 
       - name: Set execute permission for display_results.py
-        run: chmod +x .github/workflows/display_results.py
+        run: chmod +x scripts/display_results.py
 
       - name: Display test results in a readable format
-        run: python3 .github/workflows/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
+        run: python3 scripts/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
