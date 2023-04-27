@@ -1,15 +1,9 @@
-name: Build and Test
+name: Build
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push, pull_request]
 
 jobs:
-  build_and_test:
+  build:
     runs-on: ubuntu-latest
     container: zephyrprojectrtos/ci:latest
     env:
@@ -18,51 +12,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          path: unitTest.git
+          path: example-application
 
       - name: Initialize
-        working-directory: unitTest.git
+        working-directory: example-application
         run: |
           west init -l .
           west update
-
       - name: Build firmware
-        working-directory: unitTest.git
+        working-directory: example-application
         run: |
           west build -b custom_plank app
-
-      - name: Run Unity and CMock tests
-        working-directory: unitTest.git
-        run: |
-          # Build the Unity and CMock test runner
-          mkdir -p build/unity-cmock
-          cd build/unity-cmock
-          cmake ../.. -DUNITY_INCLUDE_CONFIG_H=ON
-          make
-
-          # Run the tests and upload logs
-          cd ../..
-          build/unity-cmock/unity-cmock || true
-          find twister-out -name build.log | xargs tar czf build-logs.tar.gz
-          echo "::set-output name=build-logs::$(pwd)/build-logs.tar.gz"
-
-      - name: Run Twister Tests
-        working-directory: unitTest.git
+      - name: Twister Tests
+        working-directory: example-application
         run: |
           ../zephyr/scripts/twister -G --board-root boards/ --testsuite-root ./tests/
+       - name: Display build.log
+        run: cat /__w/unitTest/unitTest/example-application/twister-out/native_posix/unity/example_test/unity.example_test/build.log
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
         with:
           name: firmware
-          path: unitTest.git/build/zephyr/zephyr.*
-
-      - name: Upload build logs
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: build-logs
-          path: unitTest.git/build-logs.tar.gz
-
-    outputs:
-      build-logs: ${{ steps.run-unity-cmock-tests.outputs.build-logs }}
+          path: example-application/build/zephyr/zephyr.*
