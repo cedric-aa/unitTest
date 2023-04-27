@@ -1,9 +1,15 @@
-name: Build
+name: Build and Test
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     container: zephyrprojectrtos/ci:latest
     env:
@@ -19,16 +25,44 @@ jobs:
         run: |
           west init -l .
           west update
+
       - name: Build firmware
         working-directory: unitTest.git
         run: |
           west build -b custom_plank app
-      - name: Twister Tests
+
+      - name: Run Unity and CMock tests
+        working-directory: unitTest.git
+        run: |
+          # Build the Unity and CMock test runner
+          mkdir -p build/unity-cmock
+          cd build/unity-cmock
+          cmake ../.. -DUNITY_INCLUDE_CONFIG_H=ON
+          make
+
+          # Run the tests and upload logs
+          cd ../..
+          build/unity-cmock/unity-cmock || true
+          find twister-out -name build.log | xargs tar czf build-logs.tar.gz
+          echo "::set-output name=build-logs::$(pwd)/build-logs.tar.gz"
+
+      - name: Run Twister Tests
         working-directory: unitTest.git
         run: |
           ../zephyr/scripts/twister -G --board-root boards/ --testsuite-root ./tests/
+
       - name: Archive firmware
         uses: actions/upload-artifact@v2
         with:
           name: firmware
           path: unitTest.git/build/zephyr/zephyr.*
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: build-logs
+          path: unitTest.git/build-logs.tar.gz
+
+    outputs:
+      build-logs: ${{ steps.run-unity-cmock-tests.outputs.build-logs }}
