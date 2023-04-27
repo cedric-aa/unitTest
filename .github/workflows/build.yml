@@ -50,7 +50,7 @@ jobs:
 
       - name: Display test results in a readable format
         run: |
-          python3 display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
+          python3 .github/workflows/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
