@@ -1,0 +1,8 @@
+# EV-BT832 DK NRF52832 board configuration
+
+# Copyright (c) 2016 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AA_KARDUP_TEMP_SENSOR_NRF52832
+	bool "ADVAIR KARDUP TEMP SENSOR NRF52832"
+	depends on SOC_NRF52832_QFAA
