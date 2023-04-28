@@ -45,11 +45,11 @@ jobs:
     
       - name: Set up the environment
         run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/display_result.py
+          chmod +x /__w/unitTest/unitTest/example-application/scripts/display_result.py
 
       - name: Run display_results.py script
         run: |
-         $GITHUB_WORKSPACE/scripts/display_result.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
+         /__w/unitTest/unitTest/example-application/scripts/display_result.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
