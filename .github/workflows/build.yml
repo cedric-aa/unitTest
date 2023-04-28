@@ -39,11 +39,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3
 
-      - name: Set execute permission for display_results.py
-        run: chmod +x /__w/unitTest/unitTest/example-application/scripts/display_results.py
+  
+    
+      - name: Set up the environment
+        run: |
+          chmod +x scripts/display_results.py
+        working-directory: /github/workspace
 
-      - name: Display test results in a readable format
-        run: python3 /__w/unitTest/unitTest/example-application/scripts/display_results.py /__w/unitTest/unitTest/example-application/twister-out/twister.json
+      - name: Run display_results.py script
+        run: |
+          ./scripts/display_results.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
+        working-directory: /github/workspace
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
