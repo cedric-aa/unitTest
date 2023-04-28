@@ -43,14 +43,13 @@ jobs:
         run: |
           pwd
     
-
       - name: Set up the environment
         run: |
-          chmod +x $GITHUB_WORKSPACE/scripts/display_results.py
+          chmod +x $GITHUB_WORKSPACE/scripts/display_result.py
 
       - name: Run display_results.py script
         run: |
-         $GITHUB_WORKSPACE/scripts/display_results.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
+         $GITHUB_WORKSPACE/scripts/display_result.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
