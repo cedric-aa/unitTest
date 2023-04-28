@@ -1,83 +1,78 @@
-# Redgum - Bluetooth Mesh Code for Bluetooth Module
+# nRF Connect SDK example application
 
-## Getting Started
+This repository contains an nRF Connect SDK example application. The main
+purpose of this repository is to serve as a reference on how to structure nRF Connect
+SDK based applications. Some of the features demonstrated in this example are:
 
-* Install VS Code on your computer [https://code.visualstudio.com/download]
-* Install nRF Connect SDK, all the toolchain and nRF Connect for VS Code Extensions [https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_assistant.html]
-* Setup Git [https://docs.github.com/en/get-started/quickstart/set-up-git]
+- Basic [Zephyr application][app_dev] skeleton
+- [Zephyr workspace applications][workspace_app]
+- [West T2 topology][west_t2]
+- [Custom boards][board_porting]
+- Custom [devicetree bindings][bindings]
+- Out-of-tree [drivers][drivers]
+- Out-of-tree libraries
+- Example CI configuration (using Github Actions)
+- Custom [west extension][west_ext]
 
-## Board Files
+This repository is versioned together with the [nRF Connect SDK main tree][sdk-nrf]. This
+means that every time that nRF Connect SDK is tagged, this repository is tagged as well
+with the same version number, and the [manifest](west.yml) entry for `zephyr`
+will point to the corresponding nRF Connect SDK tag. For example, the `ncs-example-application`
+v2.3.0 will point to nRF Connect SDK v2.3.0. Note that the `main` branch always
+points to the development branch of nRF Connect SDK, also `main`.
 
-Custom board files are stored under `/lib/boards/`
+[app_dev]: https://docs.zephyrproject.org/latest/develop/application/index.html
+[workspace_app]: https://docs.zephyrproject.org/latest/develop/application/index.html#zephyr-workspace-app
+[west_t2]: https://docs.zephyrproject.org/latest/develop/west/workspaces.html#west-t2
+[board_porting]: https://docs.zephyrproject.org/latest/guides/porting/board_porting.html
+[bindings]: https://docs.zephyrproject.org/latest/guides/dts/bindings.html
+[drivers]: https://docs.zephyrproject.org/latest/reference/drivers/index.html
+[sdk-nrf]: https://github.com/nrfconnect/sdk-nrf
+[west_ext]: https://docs.zephyrproject.org/latest/develop/west/extensions.html
 
-### Setup VS Code to show custom board in nRF Connect extension
+## Getting started
 
-* Open the command pallete by pressing `Ctrl+Shift+P` and type in `Workspace Setting`
-* Choose `Preferences: Open Workspace Settings`
-* Search for `boards`
-* Under `Nrf-connect: Boards Roots` add `../lib/` and `/lib/` to the path using add item button
+Before getting started, make sure you have a proper nRF Connect SDK development environment.
+Follow the official
+[Getting started guide](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/getting_started.html).
 
-## Code formatting
+### Initialization
 
-We standarize code formatting by using `.clang-format` file.
+The first step is to initialize the workspace folder (``my-workspace``) where
+the ``example-application`` and all nRF Connect SDK modules will be cloned. Run the following
+command:
 
-Make a copy of this file and place it in the root directory of the project folder.
-
-### Setup VS Code to automatically format on save
-
-* Open the command pallete by pressing `Ctrl+Shift+P` and type in `Workspace Setting`
-* Choose `Preferences: Open Workspace Settings`
-* Search for `format`
-* Tick `Editor: Format On Save`
-
-## Git
-
-Please start your git branches with your first name in e.g. `brian_blah`.
-
-### Starting out a new branch
-
-You should always start from the latest copy of main
 ```shell
-git switch main
-git fetch
-git pull
+# initialize my-workspace for the ncs-example-application (main branch)
+west init -m https://github.com/nrfconnect/ncs-example-application --mr main my-workspace
+# update nRF Connect SDK modules
+cd my-workspace
+west update
 ```
 
-To create a new branch from the current branch you are viewing. This will also move you to this branch:
+### Building and running
+
+To build the application, run the following command:
+
 ```shell
-git checkout -b brian_blah
+west build -b $BOARD app
 ```
 
-### Other useful commands
+where `$BOARD` is the target board.
 
-To checkout a remote branch:
+You can use the `custom_plank` board found in this repository. Note that you can use
+Zephyr and nRF Connect SDK sample boards if an appropriate overlay is provided (see `app/boards`).
+
+A sample debug configuration is also provided. To apply it, run the following
+command:
 
 ```shell
-git fetch
-git switch [name_of_remote_branch_without/origin]
+west build -b $BOARD app -- -DOVERLAY_CONFIG=debug.conf
 ```
 
-To pull changes to your branch from a remote branch
+You can also use it together with the `rtt.conf` file if using Segger RTT. Once
+you have built the application, run the following command to flash it:
 
 ```shell
-git fetch
-git merge origin/[name_of_remote_branch]
-```
-
-To switch between to another local branch
-
-```shell
-git switch [name_of_local_branch]
-```
-
-To clean up local branches that have been deleted on origin
-
-```shell
-git fetch -p && for branch in $(git for-each-ref --format '%(refname) %(upstream:track)' refs/heads | awk '$2 == "[gone]" {sub("refs/heads/", "", $1); print $1}'); do git branch -D $branch; done
-```
-
-To add this as an alias - use the following:
-
-```shell
-alias gclean="git fetch -p && for branch in $(git for-each-ref --format '%(refname) %(upstream:track)' refs/heads | awk '$2 == "[gone]" {sub("refs/heads/", "", $1); print $1}'); do git branch -D $branch; done"
+west flash
 ```

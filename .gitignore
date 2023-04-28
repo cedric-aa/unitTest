@@ -1,39 +1,13 @@
-*.o
-*.d
-*.cmd
-*.log
-*.pyc
-*.swp
-*.swo
-*~
-build
-build-*
-build_*
-cscope.*
-.dir
-venv
-.venv
-.idea
-
-/*.patch
-
-tags
-.project
-.cproject
-.xxproject
-.envrc
+# editors
 .vscode
-sanity-out*
-twister-out*
+*.swp
+*~
 
-doc/_build
-doc/nrf/_doxygen/
-doc/nrf/_samples/
-doc/*_warnings.txt
-doc/*_doc.log
+# python
+.venv
 
-ext/lib/bin/supl
-ext/lib/bin/libsupl.zip
-ext/BSEC_*
+# build
+/build*
+app/build/
 
-applications/nrf5340_audio/src/fw_info_app.c
+__pycache__/
