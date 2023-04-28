@@ -8,6 +8,9 @@
 
 # build
 /build*
-app/build/
+apps/app/build/
+apps/mesh_hub/build/
+apps/mesh_temp_sensor/build/
+apps/mesh_cb/build/
 
 __pycache__/
