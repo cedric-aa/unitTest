@@ -49,7 +49,7 @@ jobs:
 
       - name: Run display_results.py script
         run: |
-         /__w/unitTest/unitTest/example-application/scripts/display_result.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
+           python /__w/unitTest/unitTest/example-application/scripts/display_result.py  /__w/unitTest/unitTest/example-application/twister-out/twister.json
 
       - name: Archive firmware
         uses: actions/upload-artifact@v2
